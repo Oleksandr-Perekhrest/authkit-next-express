@@ -11,6 +11,11 @@ const send = (res: Response, status: number, error: ErrorResponse["error"]) => {
   res.status(status).json({ error } satisfies ErrorResponse);
 };
 
+const bodyErrorType = (err: unknown) =>
+  typeof err === "object" && err !== null && "type" in err
+    ? err.type
+    : undefined;
+
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
     return send(res, err.status, {
@@ -35,6 +40,22 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return send(res, 409, {
       code: "CONFLICT",
       message: "Resource already exists",
+    });
+  }
+
+  const bodyError = bodyErrorType(err);
+
+  if (bodyError === "entity.parse.failed") {
+    return send(res, 400, {
+      code: "INVALID_JSON",
+      message: "Request body is not valid JSON",
+    });
+  }
+
+  if (bodyError === "entity.too.large") {
+    return send(res, 413, {
+      code: "PAYLOAD_TOO_LARGE",
+      message: "Request body is too large",
     });
   }
 

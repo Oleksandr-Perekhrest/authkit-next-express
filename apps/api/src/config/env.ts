@@ -1,3 +1,4 @@
+// outsource dependencies
 import { z } from "zod";
 
 const envSchema = z.object({
@@ -6,6 +7,7 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.url(),
+  CORS_ORIGIN: z.url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
