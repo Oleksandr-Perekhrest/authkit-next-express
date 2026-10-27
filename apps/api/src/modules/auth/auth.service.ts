@@ -80,7 +80,11 @@ export const getCurrentUser = async (userId: string) => {
     });
 
     if (!user) {
-        throw new AppError(401, "UNAUTHENTICATED", "User account no longer exists");
+        throw new AppError(
+            401,
+            "UNAUTHENTICATED",
+            "User account no longer exists",
+        );
     }
 
     return user;
@@ -118,7 +122,9 @@ export const endSession = async (refreshToken: string): Promise<void> => {
     });
 
     if (row) {
-        await prisma.refreshToken.deleteMany({ where: { familyId: row.familyId } });
+        await prisma.refreshToken.deleteMany({
+            where: { familyId: row.familyId },
+        });
     }
 };
 
@@ -141,12 +147,20 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
     const row = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
     if (!row || row.expiresAt <= now) {
-        throw new AppError(401, "UNAUTHENTICATED", "Refresh token is invalid or expired");
+        throw new AppError(
+            401,
+            "UNAUTHENTICATED",
+            "Refresh token is invalid or expired",
+        );
     }
 
     if (row.revokedAt !== null) {
         const activeCount = await prisma.refreshToken.count({
-            where: { familyId: row.familyId, revokedAt: null, expiresAt: { gt: now } },
+            where: {
+                familyId: row.familyId,
+                revokedAt: null,
+                expiresAt: { gt: now },
+            },
         });
 
         if (activeCount === 0) {
@@ -156,7 +170,11 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
         const revokedAgeMs = now.getTime() - row.revokedAt.getTime();
 
         if (revokedAgeMs < REFRESH_REUSE_LEEWAY_SECONDS * 1000) {
-            throw new AppError(409, "REFRESH_CONFLICT", "Refresh token already used");
+            throw new AppError(
+                409,
+                "REFRESH_CONFLICT",
+                "Refresh token already used",
+            );
         }
 
         // Revoke the entire family outside a transaction so the write always commits.
@@ -164,8 +182,15 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
             where: { familyId: row.familyId, revokedAt: null },
             data: { revokedAt: now },
         });
-        console.warn("Refresh token reuse detected", { userId: row.userId, familyId: row.familyId });
-        throw new AppError(401, "UNAUTHENTICATED", "Refresh token reuse detected");
+        console.warn("Refresh token reuse detected", {
+            userId: row.userId,
+            familyId: row.familyId,
+        });
+        throw new AppError(
+            401,
+            "UNAUTHENTICATED",
+            "Refresh token reuse detected",
+        );
     }
 
     return prisma.$transaction(async (tx) => {
@@ -175,7 +200,11 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
         });
 
         if (count !== 1) {
-            throw new AppError(409, "REFRESH_CONFLICT", "Refresh token already used");
+            throw new AppError(
+                409,
+                "REFRESH_CONFLICT",
+                "Refresh token already used",
+            );
         }
 
         return issueSession(tx, row.userId, row.familyId);

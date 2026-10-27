@@ -7,7 +7,9 @@ const run = async () => {
     try {
         const count = await deleteExpiredRefreshTokens();
         if (count > 0) {
-            console.log(`cleanup-refresh-tokens: deleted ${count} expired rows`);
+            console.log(
+                `cleanup-refresh-tokens: deleted ${count} expired rows`,
+            );
         }
     } catch (err) {
         console.error("cleanup-refresh-tokens: failed", err);

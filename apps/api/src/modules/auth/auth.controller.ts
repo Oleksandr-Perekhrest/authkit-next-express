@@ -5,7 +5,11 @@ import type { RegisterInput, LoginInput } from "@authkit/shared";
 // local dependencies
 import { AppError } from "../../lib/app-error";
 import { getAuthUserId } from "../../middleware/require-auth";
-import { REFRESH_COOKIE, setAuthCookies, clearAuthCookies } from "./auth.cookies";
+import {
+    REFRESH_COOKIE,
+    setAuthCookies,
+    clearAuthCookies,
+} from "./auth.cookies";
 import {
     loginUser,
     endSession,

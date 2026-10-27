@@ -6,7 +6,14 @@ import { registerSchema, loginSchema } from "@authkit/shared";
 import { validateBody } from "../../middleware/validate";
 import { requireAuth } from "../../middleware/require-auth";
 import { loginLimiter, registerLimiter } from "../../middleware/rate-limit";
-import { register, login, me, refresh, logout, logoutAll } from "./auth.controller";
+import {
+    register,
+    login,
+    me,
+    refresh,
+    logout,
+    logoutAll,
+} from "./auth.controller";
 
 export const authRouter = Router();
 
