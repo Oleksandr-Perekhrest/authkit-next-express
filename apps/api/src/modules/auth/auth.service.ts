@@ -110,6 +110,22 @@ const issueSession = async (
 export const createSession = (userId: string): Promise<Session> =>
     prisma.$transaction((tx) => issueSession(tx, userId, randomUUID()));
 
+export const endSession = async (refreshToken: string): Promise<void> => {
+    const tokenHash = hashRefreshToken(refreshToken);
+    const row = await prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        select: { familyId: true },
+    });
+
+    if (row) {
+        await prisma.refreshToken.deleteMany({ where: { familyId: row.familyId } });
+    }
+};
+
+export const endAllSessions = async (userId: string): Promise<void> => {
+    await prisma.refreshToken.deleteMany({ where: { userId } });
+};
+
 export const rotateSession = async (refreshToken: string): Promise<Session> => {
     const tokenHash = hashRefreshToken(refreshToken);
     const now = new Date();

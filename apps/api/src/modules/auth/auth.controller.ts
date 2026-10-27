@@ -8,9 +8,11 @@ import { getAuthUserId } from "../../middleware/require-auth";
 import { REFRESH_COOKIE, setAuthCookies, clearAuthCookies } from "./auth.cookies";
 import {
     loginUser,
+    endSession,
     registerUser,
     createSession,
     rotateSession,
+    endAllSessions,
     getCurrentUser,
 } from "./auth.service";
 
@@ -34,6 +36,25 @@ export const me: RequestHandler = async (req, res) => {
     const userId = getAuthUserId(req);
     const user = await getCurrentUser(userId);
     res.json({ user });
+};
+
+export const logout: RequestHandler = async (req, res) => {
+    const token = req.cookies[REFRESH_COOKIE] as string | undefined;
+
+    if (token) {
+        await endSession(token);
+    }
+
+    clearAuthCookies(res);
+    res.sendStatus(204);
+};
+
+export const logoutAll: RequestHandler = async (req, res) => {
+    const userId = getAuthUserId(req);
+
+    await endAllSessions(userId);
+    clearAuthCookies(res);
+    res.sendStatus(204);
 };
 
 export const refresh: RequestHandler = async (req, res) => {

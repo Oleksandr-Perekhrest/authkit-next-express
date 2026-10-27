@@ -75,3 +75,13 @@ POST {{host}}/auth/refresh
 # @no-cookie-jar
 POST {{host}}/auth/refresh
 Cookie: refresh_token={{oldRefreshToken}}
+
+### Logout
+# Run "Login" first to get a fresh session cookie before sending this request.
+POST {{host}}/auth/logout
+
+### Logout all
+POST {{host}}/auth/logout-all
+
+### Refresh after logout (401)
+POST {{host}}/auth/refresh
