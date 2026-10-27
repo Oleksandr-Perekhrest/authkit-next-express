@@ -1,10 +1,10 @@
-import { defineConfig, globalIgnores } from "eslint/config";
 import js from "@eslint/js";
+import globals from "globals";
 import tseslint from "typescript-eslint";
-import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
-import globals from "globals";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import { defineConfig, globalIgnores } from "eslint/config";
 
 const webFiles = ["apps/web/**/*.{js,jsx,mjs,ts,tsx,mts}"];
 const nodeFiles = ["apps/api/**/*.ts", "packages/shared/**/*.ts"];
@@ -18,6 +18,7 @@ export default defineConfig([
     "**/dist/**",
     "**/.next/**",
     "apps/web/next-env.d.ts",
+    "apps/api/src/generated/**",
   ]),
   ...scope(nextVitals, webFiles),
   ...scope(nextTs, webFiles),
