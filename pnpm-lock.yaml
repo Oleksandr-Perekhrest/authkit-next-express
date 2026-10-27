@@ -275,6 +275,9 @@ importers:
       '@authkit/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      client-only:
+        specifier: 0.0.1
+        version: 0.0.1
       next:
         specifier: 16.4.3
         version: 16.4.3(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.19.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
