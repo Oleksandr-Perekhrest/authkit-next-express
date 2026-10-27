@@ -1,8 +1,10 @@
+// outsource dependencies
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
+import perfectionist from "eslint-plugin-perfectionist";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import { defineConfig, globalIgnores } from "eslint/config";
 
@@ -11,6 +13,50 @@ const nodeFiles = ["apps/api/**/*.ts", "packages/shared/**/*.ts"];
 
 const scope = (configs, files) =>
     configs.map((config) => ({ ...config, files }));
+
+const perfectionistRules = {
+    "perfectionist/sort-imports": [
+        "error",
+        {
+            type: "line-length",
+            order: "asc",
+            sortSideEffects: false,
+            newlinesBetween: 0,
+            groups: [
+                {
+                    group: [
+                        "value-builtin",
+                        "type-builtin",
+                        "value-external",
+                        "type-external",
+                    ],
+                    commentAbove: "outsource dependencies",
+                },
+                { newlinesBetween: 1 },
+                {
+                    group: [
+                        "type-internal",
+                        "value-internal",
+                        "type-parent",
+                        "value-parent",
+                        "type-sibling",
+                        "value-sibling",
+                        "type-index",
+                        "value-index",
+                    ],
+                    commentAbove: "local dependencies",
+                },
+            ],
+        },
+    ],
+    "perfectionist/sort-named-imports": [
+        "error",
+        {
+            type: "line-length",
+            order: "asc",
+        },
+    ],
+};
 
 export default defineConfig([
     globalIgnores([
@@ -39,6 +85,10 @@ export default defineConfig([
                 { argsIgnorePattern: "^_", ignoreRestSiblings: true },
             ],
         },
+    },
+    {
+        plugins: { perfectionist },
+        rules: perfectionistRules,
     },
     prettier,
 ]);

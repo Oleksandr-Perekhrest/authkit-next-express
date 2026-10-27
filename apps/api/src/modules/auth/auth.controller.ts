@@ -1,6 +1,6 @@
 // outsource dependencies
 import type { RequestHandler } from "express";
-import type { RegisterInput, LoginInput } from "@authkit/shared";
+import type { LoginInput, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { AppError } from "../../lib/app-error";

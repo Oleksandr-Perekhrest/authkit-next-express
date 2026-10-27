@@ -1,5 +1,6 @@
+// outsource dependencies
 import { existsSync } from "node:fs";
-import { defineConfig, env } from "prisma/config";
+import { env, defineConfig } from "prisma/config";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 

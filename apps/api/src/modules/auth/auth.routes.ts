@@ -1,17 +1,17 @@
 // outsource dependencies
 import { Router } from "express";
-import { registerSchema, loginSchema } from "@authkit/shared";
+import { loginSchema, registerSchema } from "@authkit/shared";
 
 // local dependencies
 import { validateBody } from "../../middleware/validate";
 import { requireAuth } from "../../middleware/require-auth";
 import { loginLimiter, registerLimiter } from "../../middleware/rate-limit";
 import {
-    register,
-    login,
     me,
-    refresh,
+    login,
     logout,
+    refresh,
+    register,
     logoutAll,
 } from "./auth.controller";
 

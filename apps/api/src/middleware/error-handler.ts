@@ -1,7 +1,7 @@
 // outsource dependencies
-import { ZodError, z } from "zod";
+import { z, ZodError } from "zod";
 import type { ErrorResponse } from "@authkit/shared";
-import type { ErrorRequestHandler, Response } from "express";
+import type { Response, ErrorRequestHandler } from "express";
 
 // local dependencies
 import { AppError } from "../lib/app-error";
