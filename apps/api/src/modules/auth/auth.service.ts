@@ -126,6 +126,14 @@ export const endAllSessions = async (userId: string): Promise<void> => {
     await prisma.refreshToken.deleteMany({ where: { userId } });
 };
 
+// Revoked rows are kept until they expire because reuse detection needs them.
+export const deleteExpiredRefreshTokens = async (): Promise<number> => {
+    const { count } = await prisma.refreshToken.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+    });
+    return count;
+};
+
 export const rotateSession = async (refreshToken: string): Promise<Session> => {
     const tokenHash = hashRefreshToken(refreshToken);
     const now = new Date();
