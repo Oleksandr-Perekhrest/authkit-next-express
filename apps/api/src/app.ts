@@ -11,19 +11,19 @@ import { errorHandler } from "./middleware/error-handler";
 import { healthRouter } from "./modules/health/health.routes";
 
 export function createApp() {
-  const app = express();
+    const app = express();
 
-  app.use(helmet());
-  if (env.CORS_ORIGIN) {
-    app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-  }
-  app.use(express.json({ limit: "100kb" }));
-  app.use(cookieParser());
+    app.use(helmet());
+    if (env.CORS_ORIGIN) {
+        app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+    }
+    app.use(express.json({ limit: "100kb" }));
+    app.use(cookieParser());
 
-  app.use("/health", healthRouter);
+    app.use("/health", healthRouter);
 
-  app.use(notFound);
-  app.use(errorHandler);
+    app.use(notFound);
+    app.use(errorHandler);
 
-  return app;
+    return app;
 }
