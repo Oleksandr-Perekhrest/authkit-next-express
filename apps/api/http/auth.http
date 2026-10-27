@@ -55,3 +55,10 @@ GET {{host}}/auth/me
 ### Me: no cookies (401)
 # @no-cookie-jar
 GET {{host}}/auth/me
+
+### Refresh
+POST {{host}}/auth/refresh
+
+### Refresh: no cookies (401)
+# @no-cookie-jar
+POST {{host}}/auth/refresh

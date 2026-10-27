@@ -5,9 +5,11 @@ import type { LoginInput, RegisterInput } from "@authkit/shared";
 // local dependencies
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../lib/app-error";
+import type { Prisma } from "../../generated/prisma/client";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import {
     signAccessToken,
+    hashRefreshToken,
     generateRefreshToken,
     REFRESH_TOKEN_TTL_SECONDS,
 } from "../../lib/tokens";
@@ -83,14 +85,18 @@ export const getCurrentUser = async (userId: string) => {
     return user;
 };
 
-export const createSession = async (userId: string): Promise<Session> => {
+const issueSession = async (
+    tx: Prisma.TransactionClient,
+    userId: string,
+    familyId: string,
+): Promise<Session> => {
     const { token, tokenHash } = generateRefreshToken();
 
-    await prisma.refreshToken.create({
+    await tx.refreshToken.create({
         data: {
             userId,
             tokenHash,
-            familyId: randomUUID(),
+            familyId,
             expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
         },
     });
@@ -98,4 +104,31 @@ export const createSession = async (userId: string): Promise<Session> => {
     const accessToken = await signAccessToken(userId);
 
     return { accessToken, refreshToken: token };
+};
+
+export const createSession = (userId: string): Promise<Session> =>
+    prisma.$transaction((tx) => issueSession(tx, userId, randomUUID()));
+
+export const rotateSession = async (refreshToken: string): Promise<Session> => {
+    const tokenHash = hashRefreshToken(refreshToken);
+    const now = new Date();
+
+    const row = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+
+    if (!row || row.expiresAt <= now || row.revokedAt !== null) {
+        throw new AppError(401, "UNAUTHENTICATED", "Refresh token is invalid or expired");
+    }
+
+    return prisma.$transaction(async (tx) => {
+        const { count } = await tx.refreshToken.updateMany({
+            where: { id: row.id, revokedAt: null },
+            data: { revokedAt: now },
+        });
+
+        if (count !== 1) {
+            throw new AppError(401, "UNAUTHENTICATED", "Refresh token already used");
+        }
+
+        return issueSession(tx, row.userId, row.familyId);
+    });
 };

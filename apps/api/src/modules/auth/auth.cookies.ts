@@ -29,3 +29,8 @@ export const setAuthCookies = (res: Response, session: Session) => {
         maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000,
     });
 };
+
+export const clearAuthCookies = (res: Response) => {
+    res.clearCookie(ACCESS_COOKIE, baseOptions);
+    res.clearCookie(REFRESH_COOKIE, baseOptions);
+};
