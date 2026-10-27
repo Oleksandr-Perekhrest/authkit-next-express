@@ -1,5 +1,5 @@
 // outsource dependencies
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { createHash, randomBytes } from "node:crypto";
 
 // local dependencies
@@ -17,6 +17,12 @@ export const signAccessToken = (userId: string): Promise<string> =>
         .setIssuedAt()
         .setExpirationTime(`${ACCESS_TOKEN_TTL_SECONDS}s`)
         .sign(accessSecret);
+
+export const verifyAccessToken = async (token: string): Promise<{ userId: string }> => {
+    const { payload } = await jwtVerify(token, accessSecret, { algorithms: ["HS256"] });
+    if (!payload.sub) throw new Error("Missing sub claim");
+    return { userId: payload.sub };
+};
 
 export const hashRefreshToken = (token: string): string =>
     createHash("sha256").update(token).digest("hex");
