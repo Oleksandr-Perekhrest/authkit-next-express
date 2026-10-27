@@ -7,6 +7,8 @@ import { env } from "../config/env";
 
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+// Parallel refreshes from several tabs can present an already-rotated token within this window.
+export const REFRESH_REUSE_LEEWAY_SECONDS = 10;
 
 const accessSecret = new TextEncoder().encode(env.JWT_ACCESS_SECRET);
 

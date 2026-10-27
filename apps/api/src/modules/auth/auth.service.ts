@@ -12,6 +12,7 @@ import {
     hashRefreshToken,
     generateRefreshToken,
     REFRESH_TOKEN_TTL_SECONDS,
+    REFRESH_REUSE_LEEWAY_SECONDS,
 } from "../../lib/tokens";
 
 const publicUserSelect = {
@@ -115,8 +116,32 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
 
     const row = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
-    if (!row || row.expiresAt <= now || row.revokedAt !== null) {
+    if (!row || row.expiresAt <= now) {
         throw new AppError(401, "UNAUTHENTICATED", "Refresh token is invalid or expired");
+    }
+
+    if (row.revokedAt !== null) {
+        const activeCount = await prisma.refreshToken.count({
+            where: { familyId: row.familyId, revokedAt: null, expiresAt: { gt: now } },
+        });
+
+        if (activeCount === 0) {
+            throw new AppError(401, "UNAUTHENTICATED", "Session has ended");
+        }
+
+        const revokedAgeMs = now.getTime() - row.revokedAt.getTime();
+
+        if (revokedAgeMs < REFRESH_REUSE_LEEWAY_SECONDS * 1000) {
+            throw new AppError(409, "REFRESH_CONFLICT", "Refresh token already used");
+        }
+
+        // Revoke the entire family outside a transaction so the write always commits.
+        await prisma.refreshToken.updateMany({
+            where: { familyId: row.familyId, revokedAt: null },
+            data: { revokedAt: now },
+        });
+        console.warn("Refresh token reuse detected", { userId: row.userId, familyId: row.familyId });
+        throw new AppError(401, "UNAUTHENTICATED", "Refresh token reuse detected");
     }
 
     return prisma.$transaction(async (tx) => {
@@ -126,7 +151,7 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
         });
 
         if (count !== 1) {
-            throw new AppError(401, "UNAUTHENTICATED", "Refresh token already used");
+            throw new AppError(409, "REFRESH_CONFLICT", "Refresh token already used");
         }
 
         return issueSession(tx, row.userId, row.familyId);
