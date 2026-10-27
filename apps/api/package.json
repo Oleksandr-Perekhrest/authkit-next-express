@@ -1,0 +1,24 @@
+{
+  "name": "@authkit/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "tsdown",
+    "start": "node --env-file-if-exists=.env dist/index.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "catalog:",
+    "tsdown": "^0.23.2",
+    "tsx": "^4.23.15",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@authkit/shared": "workspace:*",
+    "express": "^5.3.0",
+    "zod": "catalog:"
+  }
+}

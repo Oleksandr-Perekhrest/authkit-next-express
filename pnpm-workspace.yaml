@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+engineStrict: true
+
+allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+
+catalog:
+  "@types/node": ^24.19.2
+  typescript: ^5.9.3
+  zod: ^4.6.7
