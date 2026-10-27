@@ -1,0 +1,50 @@
+@host = http://localhost:4000
+
+### Health
+GET {{host}}/health
+
+### Register
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "password123",
+  "name": "Demo"
+}
+
+### Register: email taken (409)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "password123"
+}
+
+### Register: invalid data (400)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "123"
+}
+
+### Login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "password123"
+}
+
+### Login: wrong password (401)
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "wrong-password"
+}
