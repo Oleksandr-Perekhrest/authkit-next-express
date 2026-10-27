@@ -70,6 +70,19 @@ export const loginUser = async ({ email, password }: LoginInput) => {
     return publicUser;
 };
 
+export const getCurrentUser = async (userId: string) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: publicUserSelect,
+    });
+
+    if (!user) {
+        throw new AppError(401, "UNAUTHENTICATED", "User account no longer exists");
+    }
+
+    return user;
+};
+
 export const createSession = async (userId: string): Promise<Session> => {
     const { token, tokenHash } = generateRefreshToken();
 

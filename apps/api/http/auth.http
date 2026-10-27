@@ -48,3 +48,10 @@ Content-Type: application/json
   "email": "demo@example.com",
   "password": "wrong-password"
 }
+
+### Me
+GET {{host}}/auth/me
+
+### Me: no cookies (401)
+# @no-cookie-jar
+GET {{host}}/auth/me

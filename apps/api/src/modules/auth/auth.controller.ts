@@ -4,7 +4,8 @@ import type { RegisterInput, LoginInput } from "@authkit/shared";
 
 // local dependencies
 import { setAuthCookies } from "./auth.cookies";
-import { createSession, registerUser, loginUser } from "./auth.service";
+import { getAuthUserId } from "../../middleware/require-auth";
+import { getCurrentUser, createSession, registerUser, loginUser } from "./auth.service";
 
 export const register: RequestHandler = async (req, res) => {
     const user = await registerUser(req.body as RegisterInput);
@@ -19,5 +20,11 @@ export const login: RequestHandler = async (req, res) => {
     const session = await createSession(user.id);
 
     setAuthCookies(res, session);
+    res.json({ user });
+};
+
+export const me: RequestHandler = async (req, res) => {
+    const userId = getAuthUserId(req);
+    const user = await getCurrentUser(userId);
     res.json({ user });
 };

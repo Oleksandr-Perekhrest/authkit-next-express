@@ -1,10 +1,17 @@
 // outsource dependencies
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 
 // local dependencies
 import { AppError } from "../lib/app-error";
 import { verifyAccessToken } from "../lib/tokens";
 import { ACCESS_COOKIE } from "../modules/auth/auth.cookies";
+
+export const getAuthUserId = (req: Request): string => {
+    if (!req.user?.id) {
+        throw new AppError(401, "UNAUTHENTICATED", "Authentication required");
+    }
+    return req.user.id;
+};
 
 export const requireAuth: RequestHandler = async (req, _res, next) => {
     const token = req.cookies[ACCESS_COOKIE] as string | undefined;
