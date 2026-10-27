@@ -1,13 +1,9 @@
-import express from "express";
-import { healthResponseSchema } from "@authkit/shared";
+// local dependencies
+import { createApp } from "./app";
+import { env } from "./config/env";
 
-const app = express();
-const port = Number(process.env.PORT ?? 4000);
+const app = createApp();
 
-app.get("/health", (_req, res) => {
-  res.json(healthResponseSchema.parse({ status: "ok" }));
-});
-
-app.listen(port, () => {
-  console.log(`api listening on http://localhost:${port}`);
+app.listen(env.PORT, () => {
+    console.log(`api listening on http://localhost:${env.PORT}`);
 });

@@ -1,0 +1,21 @@
+name: authkit
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: authkit
+      POSTGRES_PASSWORD: authkit
+      POSTGRES_DB: authkit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authkit -d authkit"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

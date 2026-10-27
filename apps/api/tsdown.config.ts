@@ -1,10 +1,10 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
-  platform: "node",
-  format: "esm",
-  deps: {
-    alwaysBundle: ["@authkit/shared"],
-  },
+    entry: ["src/index.ts"],
+    platform: "node",
+    format: "esm",
+    deps: {
+        alwaysBundle: ["@authkit/shared"],
+    },
 });
