@@ -10,6 +10,7 @@ import type { LoginInput, UserResponse } from "@authkit/shared";
 
 // local dependencies
 import { apiFetch } from "@/lib/api-client";
+import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
 
 export default function LoginForm() {
@@ -37,48 +38,47 @@ export default function LoginForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div>
-                <label htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    aria-invalid={!!errors.email || undefined}
-                    aria-describedby={errors.email ? "email-error" : undefined}
-                    {...register("email")}
-                />
-                {errors.email && (
-                    <p id="email-error" role="alert">
-                        {errors.email.message}
-                    </p>
-                )}
-            </div>
-            <div>
-                <label htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    aria-invalid={!!errors.password || undefined}
-                    aria-describedby={
-                        errors.password ? "password-error" : undefined
-                    }
-                    {...register("password")}
-                />
-                {errors.password && (
-                    <p id="password-error" role="alert">
-                        {errors.password.message}
-                    </p>
-                )}
-            </div>
-            {errors.root && <p role="alert">{errors.root.message}</p>}
-            <button type="submit" disabled={isSubmitting}>
+        <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="flex flex-col gap-4"
+        >
+            <TextField
+                label="Email"
+                id="email"
+                type="email"
+                autoComplete="email"
+                error={errors.email?.message}
+                {...register("email")}
+            />
+            <TextField
+                label="Password"
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                error={errors.password?.message}
+                {...register("password")}
+            />
+            {errors.root && (
+                <p
+                    role="alert"
+                    className="text-sm text-red-600 dark:text-red-400"
+                >
+                    {errors.root.message}
+                </p>
+            )}
+            <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
                 {isSubmitting ? "Logging in…" : "Log in"}
             </button>
-            <p>
+            <p className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <Link href="/register">Register</Link>
+                <Link href="/register" className="underline">
+                    Register
+                </Link>
             </p>
         </form>
     );

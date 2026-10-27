@@ -10,6 +10,7 @@ import type { UserResponse, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { apiFetch } from "@/lib/api-client";
+import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
 
 export default function RegisterForm() {
@@ -37,66 +38,58 @@ export default function RegisterForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div>
-                <label htmlFor="name">Name</label>
-                <input
-                    id="name"
-                    type="text"
-                    autoComplete="name"
-                    aria-invalid={!!errors.name || undefined}
-                    aria-describedby={errors.name ? "name-error" : undefined}
-                    {...register("name", {
-                        setValueAs: (value: string) =>
-                            value.trim() === "" ? undefined : value,
-                    })}
-                />
-                {errors.name && (
-                    <p id="name-error" role="alert">
-                        {errors.name.message}
-                    </p>
-                )}
-            </div>
-            <div>
-                <label htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    aria-invalid={!!errors.email || undefined}
-                    aria-describedby={errors.email ? "email-error" : undefined}
-                    {...register("email")}
-                />
-                {errors.email && (
-                    <p id="email-error" role="alert">
-                        {errors.email.message}
-                    </p>
-                )}
-            </div>
-            <div>
-                <label htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    aria-invalid={!!errors.password || undefined}
-                    aria-describedby={
-                        errors.password ? "password-error" : undefined
-                    }
-                    {...register("password")}
-                />
-                {errors.password && (
-                    <p id="password-error" role="alert">
-                        {errors.password.message}
-                    </p>
-                )}
-            </div>
-            {errors.root && <p role="alert">{errors.root.message}</p>}
-            <button type="submit" disabled={isSubmitting}>
+        <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="flex flex-col gap-4"
+        >
+            <TextField
+                label="Name"
+                id="name"
+                type="text"
+                autoComplete="name"
+                error={errors.name?.message}
+                {...register("name", {
+                    setValueAs: (value: string) =>
+                        value.trim() === "" ? undefined : value,
+                })}
+            />
+            <TextField
+                label="Email"
+                id="email"
+                type="email"
+                autoComplete="email"
+                error={errors.email?.message}
+                {...register("email")}
+            />
+            <TextField
+                label="Password"
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.password?.message}
+                {...register("password")}
+            />
+            {errors.root && (
+                <p
+                    role="alert"
+                    className="text-sm text-red-600 dark:text-red-400"
+                >
+                    {errors.root.message}
+                </p>
+            )}
+            <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
                 {isSubmitting ? "Registering…" : "Register"}
             </button>
-            <p>
-                Already have an account? <Link href="/login">Log in</Link>
+            <p className="text-center text-sm">
+                Already have an account?{" "}
+                <Link href="/login" className="underline">
+                    Log in
+                </Link>
             </p>
         </form>
     );
