@@ -1,5 +1,5 @@
 // outsource dependencies
-import type { CookieOptions, Response } from "express";
+import type { Response, CookieOptions } from "express";
 
 // local dependencies
 import { env } from "../../config/env";
