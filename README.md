@@ -39,3 +39,26 @@ pnpm dev
 | `pnpm typecheck`    | Type-check all packages          |
 | `pnpm format`       | Format with Prettier             |
 | `pnpm format:check` | Check formatting without writing |
+
+## Security decisions
+
+Deliberate choices, with the reasoning behind them.
+
+### Password policy
+
+- Minimum length is **8 characters** (OWASP). NIST SP 800-63B-4 asks for 15
+  when a password is the only factor; 8 was chosen on purpose to keep sign-up
+  friction low in a demo project.
+- Maximum length is 128, so passphrases and password-manager output fit, but
+  the server is never asked to hash arbitrarily long input.
+- No composition rules (uppercase, digits, symbols): they push users toward
+  predictable patterns like `Password1!` without adding real strength.
+- Login only checks that the password is non-empty, so a future policy change
+  never locks out existing users.
+
+### Password hashing
+
+- Passwords are hashed with **argon2id** (`argon2` package, default
+  parameters). It is memory-hard, which makes GPU brute force expensive, and
+  has no 72-byte input limit like bcrypt.
+- Salt and parameters are stored inside the hash string itself.
