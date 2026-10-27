@@ -40,6 +40,14 @@ Content-Type: application/json
   "password": "password123"
 }
 
+> {%
+    const cookies = response.headers.valuesOf("Set-Cookie");
+    const raw = cookies.find(c => c.startsWith("refresh_token="));
+    if (raw) {
+        client.global.set("oldRefreshToken", raw.split(";")[0].split("=")[1]);
+    }
+%}
+
 ### Login: wrong password (401)
 POST {{host}}/auth/login
 Content-Type: application/json
@@ -48,3 +56,32 @@ Content-Type: application/json
   "email": "demo@example.com",
   "password": "wrong-password"
 }
+
+### Me
+GET {{host}}/auth/me
+
+### Me: no cookies (401)
+# @no-cookie-jar
+GET {{host}}/auth/me
+
+### Refresh
+POST {{host}}/auth/refresh
+
+### Refresh: no cookies (401)
+# @no-cookie-jar
+POST {{host}}/auth/refresh
+
+### Refresh: reuse old token (401, revokes family)
+# @no-cookie-jar
+POST {{host}}/auth/refresh
+Cookie: refresh_token={{oldRefreshToken}}
+
+### Logout
+# Run "Login" first to get a fresh session cookie before sending this request.
+POST {{host}}/auth/logout
+
+### Logout all
+POST {{host}}/auth/logout-all
+
+### Refresh after logout (401)
+POST {{host}}/auth/refresh
