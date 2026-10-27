@@ -1,11 +1,11 @@
 // outsource dependencies
 import { randomUUID } from "node:crypto";
-import type { RegisterInput } from "@authkit/shared";
+import type { LoginInput, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../lib/app-error";
-import { hashPassword } from "../../lib/password";
+import { hashPassword, verifyPassword } from "../../lib/password";
 import {
     signAccessToken,
     generateRefreshToken,
@@ -18,6 +18,9 @@ const publicUserSelect = {
     name: true,
     createdAt: true,
 } as const;
+
+// Checked when the user is missing, so every failed login takes the same time
+const dummyHash = hashPassword("dummy-password-for-timing");
 
 export type Session = { accessToken: string; refreshToken: string };
 
@@ -41,6 +44,30 @@ export const registerUser = async ({
         data: { email, name, passwordHash },
         select: publicUserSelect,
     });
+};
+
+export const loginUser = async ({ email, password }: LoginInput) => {
+    const user = await prisma.user.findUnique({
+        where: { email },
+        select: { ...publicUserSelect, passwordHash: true },
+    });
+
+    const isValid = await verifyPassword(
+        user?.passwordHash ?? (await dummyHash),
+        password,
+    );
+
+    if (!user?.passwordHash || !isValid) {
+        throw new AppError(
+            401,
+            "INVALID_CREDENTIALS",
+            "Invalid email or password",
+        );
+    }
+
+    const { passwordHash, ...publicUser } = user;
+
+    return publicUser;
 };
 
 export const createSession = async (userId: string): Promise<Session> => {
