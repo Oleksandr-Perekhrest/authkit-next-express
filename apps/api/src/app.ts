@@ -15,6 +15,10 @@ import { healthRouter } from "./modules/health/health.routes";
 export function createApp() {
     const app = express();
 
+    if (env.TRUST_PROXY > 0) {
+        app.set("trust proxy", env.TRUST_PROXY);
+    }
+
     app.use(helmet());
     if (env.CORS_ORIGIN) {
         app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
@@ -26,6 +30,16 @@ export function createApp() {
 
     app.use("/auth", authRouter);
     app.use("/users", usersRouter);
+
+    // TEMPORARY: remove before merge
+    app.get("/debug/ip", (req, res) => {
+        res.json({
+            ip: req.ip,
+            ips: req.ips,
+            xForwardedFor: req.headers["x-forwarded-for"] ?? null,
+            forwarded: req.headers["forwarded"] ?? null,
+        });
+    });
 
     app.use(notFound);
     app.use(errorHandler);
