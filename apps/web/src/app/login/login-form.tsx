@@ -2,6 +2,7 @@
 
 // outsource dependencies
 import Link from "next/link";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { loginSchema } from "@authkit/shared";
@@ -13,10 +14,18 @@ import { apiFetch } from "@/lib/api-client";
 import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
 import { useAuth } from "@/components/auth-provider";
+import GoogleSignInButton from "@/components/google-sign-in-button";
 
-export default function LoginForm() {
+export default function LoginForm({
+    googleError: initialGoogleError,
+}: {
+    googleError: string | null;
+}) {
     const router = useRouter();
     const { setUser } = useAuth();
+    const [googleError, setGoogleError] = useState<string | null>(
+        initialGoogleError,
+    );
     const {
         register,
         handleSubmit,
@@ -25,6 +34,7 @@ export default function LoginForm() {
     } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
     async function onSubmit(data: LoginInput) {
+        setGoogleError(null);
         try {
             const response = await apiFetch<UserResponse>("/auth/login", {
                 method: "POST",
@@ -46,6 +56,14 @@ export default function LoginForm() {
             noValidate
             className="flex flex-col gap-4"
         >
+            {googleError && (
+                <p
+                    role="alert"
+                    className="text-sm text-red-600 dark:text-red-400"
+                >
+                    {googleError}
+                </p>
+            )}
             <TextField
                 label="Email"
                 id="email"
@@ -77,6 +95,12 @@ export default function LoginForm() {
             >
                 {isSubmitting ? "Logging in…" : "Log in"}
             </button>
+            <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                <span className="text-sm text-neutral-500">or</span>
+                <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+            </div>
+            <GoogleSignInButton />
             <p className="text-center text-sm">
                 Don&apos;t have an account?{" "}
                 <Link href="/register" className="underline">

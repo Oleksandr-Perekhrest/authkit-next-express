@@ -13,6 +13,7 @@ import { apiFetch } from "@/lib/api-client";
 import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
 import { useAuth } from "@/components/auth-provider";
+import GoogleSignInButton from "@/components/google-sign-in-button";
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -88,6 +89,12 @@ export default function RegisterForm() {
             >
                 {isSubmitting ? "Registering…" : "Register"}
             </button>
+            <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                <span className="text-sm text-neutral-500">or</span>
+                <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+            </div>
+            <GoogleSignInButton />
             <p className="text-center text-sm">
                 Already have an account?{" "}
                 <Link href="/login" className="underline">

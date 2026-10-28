@@ -36,3 +36,14 @@ export const publicUserSchema = z.object({
 
 export type PublicUser = z.infer<typeof publicUserSchema>;
 export type UserResponse = { user: PublicUser };
+
+export const GOOGLE_AUTH_ERRORS = {
+    failed: "failed",
+    cancelled: "cancelled",
+    invalid_state: "invalid_state",
+    account_exists: "account_exists",
+    email_unverified: "email_unverified",
+} as const;
+
+export type GoogleAuthError =
+    (typeof GOOGLE_AUTH_ERRORS)[keyof typeof GOOGLE_AUTH_ERRORS];

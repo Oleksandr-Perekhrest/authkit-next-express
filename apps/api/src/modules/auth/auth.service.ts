@@ -1,5 +1,6 @@
 // outsource dependencies
 import { randomUUID } from "node:crypto";
+import { GOOGLE_AUTH_ERRORS } from "@authkit/shared";
 import type { LoginInput, RegisterInput } from "@authkit/shared";
 
 // local dependencies
@@ -132,6 +133,60 @@ export const deleteExpiredRefreshTokens = async (): Promise<number> => {
         where: { expiresAt: { lt: new Date() } },
     });
     return count;
+};
+
+export type GoogleClaims = {
+    sub: string;
+    email: string;
+    name?: string;
+};
+
+export const findOrCreateGoogleUser = async ({
+    sub,
+    email,
+    name,
+}: GoogleClaims) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const account = await prisma.account.findUnique({
+        where: {
+            provider_providerAccountId: {
+                provider: "google",
+                providerAccountId: sub,
+            },
+        },
+        select: { user: { select: publicUserSelect } },
+    });
+
+    if (account) {
+        return account.user;
+    }
+
+    const existing = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { id: true },
+    });
+
+    if (existing) {
+        throw new AppError(
+            409,
+            GOOGLE_AUTH_ERRORS.account_exists,
+            "An account with this email already exists",
+        );
+    }
+
+    const trimmedName = name?.trim().slice(0, 100) ?? "";
+
+    return prisma.user.create({
+        data: {
+            email: normalizedEmail,
+            name: trimmedName || null,
+            accounts: {
+                create: { provider: "google", providerAccountId: sub },
+            },
+        },
+        select: publicUserSelect,
+    });
 };
 
 export const rotateSession = async (refreshToken: string): Promise<Session> => {

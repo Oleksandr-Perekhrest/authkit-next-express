@@ -14,6 +14,8 @@ import {
     refresh,
     register,
     logoutAll,
+    googleSignIn,
+    googleCallback,
 } from "./auth.controller";
 
 export const authRouter = Router();
@@ -31,3 +33,5 @@ authRouter.get("/me", requireAuth, me);
 authRouter.post("/refresh", refresh);
 authRouter.post("/logout", logout);
 authRouter.post("/logout-all", requireAuth, logoutAll);
+authRouter.get("/google", googleSignIn);
+authRouter.get("/google/callback", googleCallback);
