@@ -1,25 +1,14 @@
-// outsource dependencies
-import { connection } from "next/server";
-import { healthResponseSchema } from "@authkit/shared";
+// local dependencies
+import HomeHero from "@/components/home-hero";
+import GradientBackground from "@/components/gradient-background";
 
-async function getApiStatus() {
-    try {
-        const res = await fetch(`${process.env.API_URL}/health`);
-        const result = healthResponseSchema.safeParse(await res.json());
-        return result.success ? result.data.status : "invalid response";
-    } catch {
-        return "unavailable";
-    }
-}
-
-export default async function Home() {
-    await connection();
-    const status = await getApiStatus();
-
+export default function Home() {
     return (
-        <main className="p-8">
-            <h1 className="text-2xl font-semibold">authkit-next-express</h1>
-            <p className="mt-2">API: {status}</p>
+        <main className="relative isolate flex flex-1 overflow-hidden">
+            <GradientBackground variant="home" />
+            <div className="flex flex-1 items-center justify-center px-4 py-16">
+                <HomeHero />
+            </div>
         </main>
     );
 }
