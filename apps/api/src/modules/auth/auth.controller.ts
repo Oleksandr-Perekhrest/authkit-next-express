@@ -4,6 +4,7 @@ import type { LoginInput, UserResponse, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { AppError } from "../../lib/app-error";
+import { toPublicUser } from "../users/users.service";
 import { getAuthUserId } from "../../middleware/require-auth";
 import {
     REFRESH_COOKIE,
@@ -13,7 +14,6 @@ import {
 import {
     loginUser,
     endSession,
-    toPublicUser,
     registerUser,
     createSession,
     rotateSession,

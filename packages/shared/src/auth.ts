@@ -8,10 +8,12 @@ export const PASSWORD_MAX_LENGTH = 128;
 
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email());
 
+export const nameSchema = z.string().trim().min(1).max(100);
+
 export const registerSchema = z.object({
     email: emailSchema,
     password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
-    name: z.string().trim().min(1).max(100).optional(),
+    name: nameSchema.optional(),
 });
 
 export const loginSchema = z.object({
@@ -21,6 +23,9 @@ export const loginSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const updateProfileSchema = z.object({ name: nameSchema.nullable() });
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const publicUserSchema = z.object({
     id: z.string(),

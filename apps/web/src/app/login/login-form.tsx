@@ -12,9 +12,11 @@ import type { LoginInput, UserResponse } from "@authkit/shared";
 import { apiFetch } from "@/lib/api-client";
 import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
+import { useAuth } from "@/components/auth-provider";
 
 export default function LoginForm() {
     const router = useRouter();
+    const { setUser } = useAuth();
     const {
         register,
         handleSubmit,
@@ -24,10 +26,11 @@ export default function LoginForm() {
 
     async function onSubmit(data: LoginInput) {
         try {
-            await apiFetch<UserResponse>("/auth/login", {
+            const response = await apiFetch<UserResponse>("/auth/login", {
                 method: "POST",
                 body: JSON.stringify(data),
             });
+            setUser(response.user);
             router.replace("/profile");
         } catch (err) {
             applyApiError(err, setError, {

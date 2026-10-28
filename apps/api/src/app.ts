@@ -9,6 +9,7 @@ import { env } from "./config/env";
 import { notFound } from "./middleware/not-found";
 import { authRouter } from "./modules/auth/auth.routes";
 import { errorHandler } from "./middleware/error-handler";
+import { usersRouter } from "./modules/users/users.routes";
 import { healthRouter } from "./modules/health/health.routes";
 
 export function createApp() {
@@ -24,6 +25,7 @@ export function createApp() {
     app.use("/health", healthRouter);
 
     app.use("/auth", authRouter);
+    app.use("/users", usersRouter);
 
     app.use(notFound);
     app.use(errorHandler);

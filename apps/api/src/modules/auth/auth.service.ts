@@ -1,10 +1,11 @@
 // outsource dependencies
 import { randomUUID } from "node:crypto";
-import type { PublicUser, LoginInput, RegisterInput } from "@authkit/shared";
+import type { LoginInput, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../lib/app-error";
+import { publicUserSelect } from "../users/users.service";
 import type { Prisma } from "../../generated/prisma/client";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import {
@@ -14,22 +15,6 @@ import {
     REFRESH_TOKEN_TTL_SECONDS,
     REFRESH_REUSE_LEEWAY_SECONDS,
 } from "../../lib/tokens";
-
-const publicUserSelect = {
-    id: true,
-    email: true,
-    name: true,
-    createdAt: true,
-} as const;
-
-type PublicUserRow = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
-
-export const toPublicUser = (user: PublicUserRow): PublicUser => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    createdAt: user.createdAt.toISOString(),
-});
 
 // Checked when the user is missing, so every failed login takes the same time
 const dummyHash = hashPassword("dummy-password-for-timing");
