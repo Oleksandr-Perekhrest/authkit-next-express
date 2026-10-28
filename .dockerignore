@@ -1,0 +1,29 @@
+# VCS
+.git
+.gitignore
+
+# Dependencies — reinstalled inside Docker
+node_modules
+**/node_modules
+
+# Build artifacts — regenerated inside Docker
+**/dist
+apps/api/src/generated
+apps/web/.next
+
+# Web app source — not needed for the API image (package.json is still included for pnpm workspace resolution)
+apps/web/src
+apps/web/public
+
+# Secrets — must never be baked into the image
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Editor and OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+**/*.log

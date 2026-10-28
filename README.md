@@ -1,44 +1,48 @@
 # authkit-next-express
 
-Full-stack authentication pet project: a Next.js frontend and an Express API in a pnpm monorepo. Email/password sign-up and login, JWT access/refresh tokens in httpOnly cookies, Google OAuth, deployed to Vercel and Render.
+A learning pet project implementing a full authentication cycle: email/password
+sign-up and login, Google OAuth, and JWT access tokens paired with rotating
+refresh tokens stored in httpOnly cookies. The frontend is Next.js 16 (App
+Router) and the backend is Express 5, wired together in a pnpm monorepo.
 
-> Work in progress.
+## Live demo
 
-## Stack
+<https://authkit-web.vercel.app>
 
-- `apps/web` — Next.js 16 (App Router), TypeScript, Tailwind CSS
-- `apps/api` — Express 5, TypeScript, bundled with tsdown
-- `packages/shared` — zod schemas and types shared by both apps
+The API runs on Render's free plan and sleeps after 15 minutes of inactivity.
+The first request after a cold start can take up to a minute.
 
-## Requirements
+## Architecture
 
-- Node.js 24 (see `.nvmrc`)
-- pnpm via corepack
+```mermaid
+flowchart LR
+    B([Browser])
+    V["Vercel · Next.js<br>rewrites /api/*"]
+    R["Render · Express API<br>(Docker)"]
+    DB[("Prisma Postgres<br>Frankfurt")]
+    G["Google OAuth"]
 
-## Getting started
-
-```bash
-nvm use
-corepack enable pnpm
-pnpm install
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env.local
-pnpm dev
+    B -- HTTPS --> V
+    V -- rewrite --> R
+    R --> DB
+    B -. sign-in .-> G
+    G -. "callback → Vercel domain" .-> B
 ```
 
-- Web: http://localhost:3000
-- API: http://localhost:4000/health
+All API calls from the browser target the Vercel domain under `/api/*`. Next.js
+rewrites those requests to the Render service so cookies are set on the Vercel
+origin and remain first-party — no cross-site restrictions apply. Google OAuth
+redirects also land on the Vercel domain, which keeps the callback in the same
+origin as the rest of the app.
 
-## Scripts
+## Tech stack
 
-| Script              | Description                      |
-| ------------------- | -------------------------------- |
-| `pnpm dev`          | Run web and api in watch mode    |
-| `pnpm build`        | Build all packages               |
-| `pnpm lint`         | Lint the whole repo              |
-| `pnpm typecheck`    | Type-check all packages          |
-| `pnpm format`       | Format with Prettier             |
-| `pnpm format:check` | Check formatting without writing |
+- **Next.js 16** (App Router, React 19, Tailwind CSS v4) — frontend
+- **Express 5** (bundled to ESM with tsdown) — API
+- **Prisma** — ORM, migrations, Postgres driver
+- **jose** — JWT signing and verification
+- **argon2** — password hashing (argon2id)
+- **Zod** — schema validation, shared between apps via `@authkit/shared`
 
 ## Security decisions
 
@@ -73,8 +77,8 @@ Deliberate choices, with the reasoning behind them.
   nothing but a second secret. Only its SHA-256 hash is stored: a leaked
   table cannot be used to sign in. A fast hash is safe here because the token
   is random, unlike a password.
-- Registration signs the user in right away; register, login and (later)
-  Google sign-in all end in the same `createSession`.
+- Registration signs the user in right away; register, login and Google sign-in
+  all end in the same `createSession`.
 
 ### Cookies
 
@@ -97,3 +101,88 @@ Deliberate choices, with the reasoning behind them.
   minutes** (successful logins are not counted), registration **5 per hour**.
 - Limits run before validation, so malformed requests count too.
 - Counters live in process memory, which is enough for a single instance.
+
+## Local development
+
+**Prerequisites:** Node.js 24 (see `.nvmrc`), pnpm via corepack, Docker.
+
+```bash
+nvm use
+corepack enable pnpm
+pnpm install
+
+# start the database
+docker compose up -d db
+
+# copy env files
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+
+# fill in JWT_ACCESS_SECRET and Google credentials in apps/api/.env, then run migrations
+pnpm --filter @authkit/api exec prisma migrate dev
+
+# start both apps
+pnpm dev
+```
+
+- Web: <http://localhost:3000>
+- API: <http://localhost:4000/health>
+
+| Script              | Description                      |
+| ------------------- | -------------------------------- |
+| `pnpm dev`          | Run web and api in watch mode    |
+| `pnpm build`        | Build all packages               |
+| `pnpm lint`         | Lint the whole repo              |
+| `pnpm typecheck`    | Type-check all packages          |
+| `pnpm format`       | Format with Prettier             |
+| `pnpm format:check` | Check formatting without writing |
+
+## Deployment
+
+### Render
+
+Deploy the API as a **Docker** service with these settings:
+
+- **Dockerfile path:** `apps/api/Dockerfile`
+- **Build context:** repo root (the Dockerfile copies workspace manifests from there)
+- **Health check path:** `/health`
+- **Build filters:** `apps/api/**`, `packages/shared/**`, `pnpm-lock.yaml`,
+  `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.dockerignore`
+  — changes outside these paths (e.g. only `apps/web`) do not redeploy the API.
+
+Migrations run automatically on container start before the server process. A
+failed migration exits the container; if the new container fails to start or
+does not pass the `/health` check, Render keeps the previous deploy running.
+
+`NODE_ENV=production` is set in the Dockerfile; `PORT` is provided by Render
+automatically.
+
+| Variable               | Description                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Direct connection string from Prisma Postgres (pooling off), with `sslmode=verify-full` |
+| `JWT_ACCESS_SECRET`    | HS256 signing secret, min 32 chars — generate with `openssl rand -base64 48`            |
+| `CORS_ORIGIN`          | Vercel app URL, e.g. `https://authkit-web.vercel.app`                                   |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                                  |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                                              |
+| `GOOGLE_REDIRECT_URI`  | Must match the OAuth console: `https://<vercel-domain>/api/auth/google/callback`        |
+| `TRUST_PROXY`          | Set to `4` — Vercel → Cloudflare → Render load balancer → local proxy (4 hops)          |
+
+### Vercel
+
+Set the **root directory** to `apps/web`. No build command override is needed.
+
+| Variable  | Description                                                 |
+| --------- | ----------------------------------------------------------- |
+| `API_URL` | Render service URL, e.g. `https://authkit-api.onrender.com` |
+
+## Project structure
+
+```
+apps/
+  web/        Next.js 16 frontend
+  api/        Express 5 API
+    Dockerfile        production image (build context: repo root)
+    http/             .http request files for manual testing
+packages/
+  shared/     Zod schemas and types consumed by both apps
+```
