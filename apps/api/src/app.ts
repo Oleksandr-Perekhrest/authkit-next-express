@@ -31,16 +31,6 @@ export function createApp() {
     app.use("/auth", authRouter);
     app.use("/users", usersRouter);
 
-    // TEMPORARY: remove before merge
-    app.get("/debug/ip", (req, res) => {
-        res.json({
-            ip: req.ip,
-            ips: req.ips,
-            xForwardedFor: req.headers["x-forwarded-for"] ?? null,
-            forwarded: req.headers["forwarded"] ?? null,
-        });
-    });
-
     app.use(notFound);
     app.use(errorHandler);
 
