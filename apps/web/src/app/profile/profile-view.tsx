@@ -4,6 +4,8 @@
 import Link from "next/link";
 
 // local dependencies
+import EditNameForm from "./edit-name-form";
+import DeleteAccount from "./delete-account";
 import { useAuth } from "@/components/auth-provider";
 
 export default function ProfileView() {
@@ -45,24 +47,33 @@ export default function ProfileView() {
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Name</p>
-                <p className="text-sm">{user.name ?? "No name"}</p>
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
+                <EditNameForm user={user} />
+                <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-sm">{user.email}</p>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">Member since</p>
+                    <p className="text-sm">
+                        {new Date(user.createdAt).toLocaleDateString(
+                            undefined,
+                            {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            },
+                        )}
+                    </p>
+                </div>
             </div>
-            <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm">{user.email}</p>
-            </div>
-            <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Member since</p>
-                <p className="text-sm">
-                    {new Date(user.createdAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    })}
+
+            <div className="border-t border-neutral-200 pt-6 dark:border-neutral-700">
+                <p className="mb-3 text-xs font-medium uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                    Danger zone
                 </p>
+                <DeleteAccount />
             </div>
         </div>
     );

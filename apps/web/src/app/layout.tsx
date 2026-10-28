@@ -32,7 +32,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             lang="en"
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         >
-            <body className="min-h-full flex flex-col">
+            {/* browser extensions (e.g. ColorZilla's cz-shortcut-listen) add attributes to <body> before hydration */}
+            <body suppressHydrationWarning className="min-h-full flex flex-col">
                 <AuthProvider initialStatus={initialStatus}>
                     <SiteHeader />
                     {children}

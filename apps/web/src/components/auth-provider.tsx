@@ -20,6 +20,7 @@ type AuthContextValue = {
     status: AuthStatus;
     user: UserResponse["user"] | null;
     setUser: (user: UserResponse["user"]) => void;
+    clearUser: () => void;
     reload: () => void;
     logout: () => Promise<void>;
 };
@@ -69,6 +70,10 @@ export default function AuthProvider({ initialStatus, children }: Props) {
         setState({ status: "authenticated", user });
     }
 
+    function clearUser() {
+        setState({ status: "anonymous" });
+    }
+
     function reload() {
         setState({ status: "loading" });
         setFetchKey((k) => k + 1);
@@ -76,14 +81,21 @@ export default function AuthProvider({ initialStatus, children }: Props) {
 
     async function logout() {
         await apiFetch("/auth/logout", { method: "POST" });
-        setState({ status: "anonymous" });
+        clearUser();
     }
 
     const user = state.status === "authenticated" ? state.user : null;
 
     return (
         <AuthContext.Provider
-            value={{ status: state.status, user, setUser, reload, logout }}
+            value={{
+                status: state.status,
+                user,
+                setUser,
+                clearUser,
+                reload,
+                logout,
+            }}
         >
             {children}
         </AuthContext.Provider>
