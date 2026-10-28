@@ -1,6 +1,8 @@
 // outsource dependencies
 import type { NextConfig } from "next";
 
+const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+
 const nextConfig: NextConfig = {
     transpilePackages: ["@authkit/shared"],
     experimental: {
@@ -13,6 +15,14 @@ const nextConfig: NextConfig = {
                 as: "*.css",
             },
         },
+    },
+    async rewrites() {
+        return [
+            {
+                source: "/api/:path*",
+                destination: `${apiUrl}/:path*`,
+            },
+        ];
     },
 };
 

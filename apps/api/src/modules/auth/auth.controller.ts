@@ -1,6 +1,6 @@
 // outsource dependencies
 import type { RequestHandler } from "express";
-import type { LoginInput, RegisterInput } from "@authkit/shared";
+import type { LoginInput, UserResponse, RegisterInput } from "@authkit/shared";
 
 // local dependencies
 import { AppError } from "../../lib/app-error";
@@ -13,6 +13,7 @@ import {
 import {
     loginUser,
     endSession,
+    toPublicUser,
     registerUser,
     createSession,
     rotateSession,
@@ -25,7 +26,7 @@ export const register: RequestHandler = async (req, res) => {
     const session = await createSession(user.id);
 
     setAuthCookies(res, session);
-    res.status(201).json({ user });
+    res.status(201).json({ user: toPublicUser(user) } satisfies UserResponse);
 };
 
 export const login: RequestHandler = async (req, res) => {
@@ -33,13 +34,13 @@ export const login: RequestHandler = async (req, res) => {
     const session = await createSession(user.id);
 
     setAuthCookies(res, session);
-    res.json({ user });
+    res.json({ user: toPublicUser(user) } satisfies UserResponse);
 };
 
 export const me: RequestHandler = async (req, res) => {
     const userId = getAuthUserId(req);
     const user = await getCurrentUser(userId);
-    res.json({ user });
+    res.json({ user: toPublicUser(user) } satisfies UserResponse);
 };
 
 export const logout: RequestHandler = async (req, res) => {
