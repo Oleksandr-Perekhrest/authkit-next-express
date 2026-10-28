@@ -9,6 +9,9 @@ const envSchema = z.object({
     DATABASE_URL: z.url(),
     CORS_ORIGIN: z.url().optional(),
     JWT_ACCESS_SECRET: z.string().min(32),
+    GOOGLE_CLIENT_ID: z.string(),
+    GOOGLE_CLIENT_SECRET: z.string(),
+    GOOGLE_REDIRECT_URI: z.url(),
 });
 
 const parsed = envSchema.safeParse(process.env);

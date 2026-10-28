@@ -1,8 +1,10 @@
 // outsource dependencies
 import type { RequestHandler } from "express";
+import { generateState, generateCodeVerifier } from "arctic";
 import type { LoginInput, UserResponse, RegisterInput } from "@authkit/shared";
 
 // local dependencies
+import { google } from "../../lib/google";
 import { AppError } from "../../lib/app-error";
 import { toPublicUser } from "../users/users.service";
 import { getAuthUserId } from "../../middleware/require-auth";
@@ -10,6 +12,7 @@ import {
     REFRESH_COOKIE,
     setAuthCookies,
     clearAuthCookies,
+    setGoogleOAuthCookies,
 } from "./auth.cookies";
 import {
     loginUser,
@@ -60,6 +63,20 @@ export const logoutAll: RequestHandler = async (req, res) => {
     await endAllSessions(userId);
     clearAuthCookies(res);
     res.sendStatus(204);
+};
+
+export const googleSignIn: RequestHandler = async (_req, res) => {
+    const state = generateState();
+    const codeVerifier = generateCodeVerifier();
+    const url = google.createAuthorizationURL(state, codeVerifier, [
+        "openid",
+        "email",
+        "profile",
+    ]);
+    url.searchParams.set("prompt", "select_account");
+
+    setGoogleOAuthCookies(res, state, codeVerifier);
+    res.redirect(302, url.toString());
 };
 
 export const refresh: RequestHandler = async (req, res) => {

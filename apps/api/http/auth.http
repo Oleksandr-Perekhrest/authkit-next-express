@@ -85,3 +85,8 @@ POST {{host}}/auth/logout-all
 
 ### Refresh after logout (401)
 POST {{host}}/auth/refresh
+
+### Google sign-in
+# Should return 302 with Location: accounts.google.com and two Set-Cookie headers:
+# google_oauth_state and google_oauth_code_verifier
+GET {{host}}/auth/google
