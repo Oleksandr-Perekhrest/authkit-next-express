@@ -1,10 +1,13 @@
 // outsource dependencies
+import { Suspense } from "react";
+import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 
 // local dependencies
 import "./globals.css";
+import UrlToast from "@/components/url-toast";
 import SiteHeader from "@/components/site-header";
 import AuthProvider from "@/components/auth-provider";
 
@@ -37,6 +40,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <AuthProvider initialStatus={initialStatus}>
                     <SiteHeader />
                     {children}
+                    <Toaster position="top-center" richColors />
+                    <Suspense fallback={null}>
+                        <UrlToast />
+                    </Suspense>
                 </AuthProvider>
             </body>
         </html>

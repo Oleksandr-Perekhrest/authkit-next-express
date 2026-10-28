@@ -2,6 +2,7 @@
 
 // outsource dependencies
 import Link from "next/link";
+import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -13,18 +14,15 @@ export default function SiteHeader() {
     const pathname = usePathname();
     const { status, logout } = useAuth();
     const [logoutPending, setLogoutPending] = useState(false);
-    const [logoutError, setLogoutError] = useState<string | null>(null);
 
     async function handleLogout() {
         setLogoutPending(true);
-        setLogoutError(null);
         try {
             await logout();
+            toast.success("Logged out");
             router.replace("/");
-        } catch (err) {
-            setLogoutError(
-                err instanceof Error ? err.message : "Logout failed",
-            );
+        } catch {
+            toast.error("Something went wrong. Please try again.");
         } finally {
             setLogoutPending(false);
         }
@@ -60,11 +58,6 @@ export default function SiteHeader() {
                     {status === "authenticated" && (
                         <>
                             {navLink("/profile", "Profile")}
-                            {logoutError && (
-                                <p className="text-red-600 dark:text-red-400">
-                                    {logoutError}
-                                </p>
-                            )}
                             <button
                                 type="button"
                                 onClick={handleLogout}

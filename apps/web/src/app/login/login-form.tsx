@@ -2,7 +2,7 @@
 
 // outsource dependencies
 import Link from "next/link";
-import { useState } from "react";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { loginSchema } from "@authkit/shared";
@@ -16,16 +16,9 @@ import { applyApiError } from "@/lib/form-errors";
 import { useAuth } from "@/components/auth-provider";
 import GoogleSignInButton from "@/components/google-sign-in-button";
 
-export default function LoginForm({
-    googleError: initialGoogleError,
-}: {
-    googleError: string | null;
-}) {
+export default function LoginForm() {
     const router = useRouter();
     const { setUser } = useAuth();
-    const [googleError, setGoogleError] = useState<string | null>(
-        initialGoogleError,
-    );
     const {
         register,
         handleSubmit,
@@ -34,19 +27,26 @@ export default function LoginForm({
     } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
     async function onSubmit(data: LoginInput) {
-        setGoogleError(null);
         try {
             const response = await apiFetch<UserResponse>("/auth/login", {
                 method: "POST",
                 body: JSON.stringify(data),
             });
             setUser(response.user);
+            toast.success("Logged in");
             router.replace("/profile");
         } catch (err) {
-            applyApiError(err, setError, {
-                fields: ["email", "password"],
-                codeMap: { INVALID_CREDENTIALS: "root", RATE_LIMITED: "root" },
-            });
+            if (
+                !applyApiError(err, setError, {
+                    fields: ["email", "password"],
+                    codeMap: {
+                        INVALID_CREDENTIALS: "root",
+                        RATE_LIMITED: "root",
+                    },
+                })
+            ) {
+                toast.error("Something went wrong. Please try again.");
+            }
         }
     }
 
@@ -56,14 +56,6 @@ export default function LoginForm({
             noValidate
             className="flex flex-col gap-4"
         >
-            {googleError && (
-                <p
-                    role="alert"
-                    className="text-sm text-red-600 dark:text-red-400"
-                >
-                    {googleError}
-                </p>
-            )}
             <TextField
                 label="Email"
                 id="email"

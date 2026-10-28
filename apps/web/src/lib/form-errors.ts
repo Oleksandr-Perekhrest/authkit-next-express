@@ -5,8 +5,6 @@ import type { FieldPath, FieldValues, UseFormSetError } from "react-hook-form";
 // local dependencies
 import { ApiError } from "@/lib/api-client";
 
-const FALLBACK_ERROR = "Something went wrong, try again";
-
 const validationDetailsSchema = z.object({
     formErrors: z.array(z.string()),
     fieldErrors: z.record(z.string(), z.array(z.string())),
@@ -21,23 +19,21 @@ export function applyApiError<T extends FieldValues>(
     err: unknown,
     setError: UseFormSetError<T>,
     options: ApplyApiErrorOptions<T>,
-): void {
+): boolean {
     if (!(err instanceof ApiError)) {
-        setError("root", { message: FALLBACK_ERROR });
-        return;
+        return false;
     }
 
     const mapped = options.codeMap[err.code];
     if (mapped !== undefined) {
         setError(mapped, { message: err.message });
-        return;
+        return true;
     }
 
     if (err.code === "VALIDATION_ERROR") {
         const parsed = validationDetailsSchema.safeParse(err.details);
         if (!parsed.success) {
-            setError("root", { message: FALLBACK_ERROR });
-            return;
+            return false;
         }
         const { formErrors, fieldErrors } = parsed.data;
         const knownFields = new Set<string>(options.fields);
@@ -55,8 +51,8 @@ export function applyApiError<T extends FieldValues>(
         if (rootMessages.length > 0) {
             setError("root", { message: rootMessages[0] });
         }
-        return;
+        return true;
     }
 
-    setError("root", { message: FALLBACK_ERROR });
+    return false;
 }

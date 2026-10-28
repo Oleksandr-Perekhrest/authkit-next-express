@@ -1,6 +1,7 @@
 "use client";
 
 // outsource dependencies
+import { toast } from "sonner";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { updateProfileSchema } from "@authkit/shared";
@@ -47,12 +48,17 @@ export default function EditNameForm({ user }: Props) {
             setUser(response.user);
             reset({ name: response.user.name ?? "" });
             setEditing(false);
+            toast.success("Name updated");
         } catch (err) {
             if (err instanceof ApiError && err.status === 401) {
                 clearUser();
                 return;
             }
-            applyApiError(err, setError, { fields: ["name"], codeMap: {} });
+            if (
+                !applyApiError(err, setError, { fields: ["name"], codeMap: {} })
+            ) {
+                toast.error("Something went wrong. Please try again.");
+            }
         }
     }
 

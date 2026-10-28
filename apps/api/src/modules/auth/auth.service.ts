@@ -159,7 +159,7 @@ export const findOrCreateGoogleUser = async ({
     });
 
     if (account) {
-        return account.user;
+        return { user: account.user, created: false };
     }
 
     const existing = await prisma.user.findUnique({
@@ -177,7 +177,7 @@ export const findOrCreateGoogleUser = async ({
 
     const trimmedName = name?.trim().slice(0, 100) ?? "";
 
-    return prisma.user.create({
+    const user = await prisma.user.create({
         data: {
             email: normalizedEmail,
             name: trimmedName || null,
@@ -187,6 +187,7 @@ export const findOrCreateGoogleUser = async ({
         },
         select: publicUserSelect,
     });
+    return { user, created: true };
 };
 
 export const rotateSession = async (refreshToken: string): Promise<Session> => {
