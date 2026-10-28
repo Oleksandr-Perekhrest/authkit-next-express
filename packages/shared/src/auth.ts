@@ -47,3 +47,16 @@ export const GOOGLE_AUTH_ERRORS = {
 
 export type GoogleAuthError =
     (typeof GOOGLE_AUTH_ERRORS)[keyof typeof GOOGLE_AUTH_ERRORS];
+
+export const GOOGLE_AUTH_SUCCESS = {
+    created: "google_created",
+    login: "google_login",
+} as const;
+export type GoogleAuthSuccess =
+    (typeof GOOGLE_AUTH_SUCCESS)[keyof typeof GOOGLE_AUTH_SUCCESS];
+
+export const AUTH_TOAST_CODES = [
+    ...Object.values(GOOGLE_AUTH_SUCCESS),
+    ...Object.values(GOOGLE_AUTH_ERRORS),
+] as const;
+export type AuthToastCode = GoogleAuthSuccess | GoogleAuthError;

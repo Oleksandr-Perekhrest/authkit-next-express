@@ -1,9 +1,14 @@
 // outsource dependencies
 import { z } from "zod";
 import type { RequestHandler } from "express";
-import { GOOGLE_AUTH_ERRORS } from "@authkit/shared";
+import { GOOGLE_AUTH_ERRORS, GOOGLE_AUTH_SUCCESS } from "@authkit/shared";
 import { decodeIdToken, generateState, generateCodeVerifier } from "arctic";
-import type { LoginInput, UserResponse, RegisterInput } from "@authkit/shared";
+import type {
+    LoginInput,
+    UserResponse,
+    AuthToastCode,
+    RegisterInput,
+} from "@authkit/shared";
 
 // local dependencies
 import { google } from "../../lib/google";
@@ -36,6 +41,9 @@ const googleClaimsSchema = z.object({
     email_verified: z.boolean(),
     name: z.string().optional(),
 });
+
+const withToast = (path: string, code: AuthToastCode): string =>
+    `${path}?${new URLSearchParams({ toast: code })}`;
 
 export const register: RequestHandler = async (req, res) => {
     const user = await registerUser(req.body as RegisterInput);
@@ -103,7 +111,7 @@ export const googleCallback: RequestHandler = async (req, res) => {
     if (error) {
         return res.redirect(
             302,
-            `/login?error=${GOOGLE_AUTH_ERRORS.cancelled}`,
+            withToast("/login", GOOGLE_AUTH_ERRORS.cancelled),
         );
     }
 
@@ -116,7 +124,7 @@ export const googleCallback: RequestHandler = async (req, res) => {
     ) {
         return res.redirect(
             302,
-            `/login?error=${GOOGLE_AUTH_ERRORS.invalid_state}`,
+            withToast("/login", GOOGLE_AUTH_ERRORS.invalid_state),
         );
     }
 
@@ -132,11 +140,11 @@ export const googleCallback: RequestHandler = async (req, res) => {
         if (!claims.email_verified) {
             return res.redirect(
                 302,
-                `/login?error=${GOOGLE_AUTH_ERRORS.email_unverified}`,
+                withToast("/login", GOOGLE_AUTH_ERRORS.email_unverified),
             );
         }
 
-        const user = await findOrCreateGoogleUser({
+        const { user, created } = await findOrCreateGoogleUser({
             sub: claims.sub,
             email: claims.email,
             name: claims.name,
@@ -144,7 +152,15 @@ export const googleCallback: RequestHandler = async (req, res) => {
         const session = await createSession(user.id);
 
         setAuthCookies(res, session);
-        return res.redirect(302, "/profile");
+        return res.redirect(
+            302,
+            withToast(
+                "/profile",
+                created
+                    ? GOOGLE_AUTH_SUCCESS.created
+                    : GOOGLE_AUTH_SUCCESS.login,
+            ),
+        );
     } catch (err) {
         if (
             err instanceof AppError &&
@@ -152,11 +168,14 @@ export const googleCallback: RequestHandler = async (req, res) => {
         ) {
             return res.redirect(
                 302,
-                `/login?error=${GOOGLE_AUTH_ERRORS.account_exists}`,
+                withToast("/login", GOOGLE_AUTH_ERRORS.account_exists),
             );
         }
         console.error("Google OAuth callback error", err);
-        return res.redirect(302, `/login?error=${GOOGLE_AUTH_ERRORS.failed}`);
+        return res.redirect(
+            302,
+            withToast("/login", GOOGLE_AUTH_ERRORS.failed),
+        );
     }
 };
 
