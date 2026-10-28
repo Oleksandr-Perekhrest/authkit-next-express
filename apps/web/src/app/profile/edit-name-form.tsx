@@ -3,7 +3,7 @@
 // outsource dependencies
 import { toast } from "sonner";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { updateProfileSchema } from "@authkit/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Save, Pencil, Trash2 } from "lucide-react";
@@ -24,14 +24,14 @@ export default function EditNameForm({ user }: Props) {
         handleSubmit,
         setError,
         reset,
-        watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<UpdateProfileInput>({
         resolver: zodResolver(updateProfileSchema),
         defaultValues: { name: user.name ?? "" },
     });
 
-    const value = watch("name");
+    const value = useWatch({ control, name: "name" });
     const isEmpty = !value?.trim();
 
     function handleCancel() {
