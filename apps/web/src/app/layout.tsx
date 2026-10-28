@@ -1,4 +1,5 @@
 // outsource dependencies
+import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <AuthProvider initialStatus={initialStatus}>
                     <SiteHeader />
                     {children}
+                    <Toaster position="top-center" richColors />
                 </AuthProvider>
             </body>
         </html>
