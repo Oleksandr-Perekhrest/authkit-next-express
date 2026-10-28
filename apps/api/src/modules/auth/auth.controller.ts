@@ -1,6 +1,8 @@
 // outsource dependencies
+import { z } from "zod";
 import type { RequestHandler } from "express";
-import { generateState, generateCodeVerifier } from "arctic";
+import { GOOGLE_AUTH_ERRORS } from "@authkit/shared";
+import { decodeIdToken, generateState, generateCodeVerifier } from "arctic";
 import type { LoginInput, UserResponse, RegisterInput } from "@authkit/shared";
 
 // local dependencies
@@ -9,12 +11,6 @@ import { AppError } from "../../lib/app-error";
 import { toPublicUser } from "../users/users.service";
 import { getAuthUserId } from "../../middleware/require-auth";
 import {
-    REFRESH_COOKIE,
-    setAuthCookies,
-    clearAuthCookies,
-    setGoogleOAuthCookies,
-} from "./auth.cookies";
-import {
     loginUser,
     endSession,
     registerUser,
@@ -22,7 +18,24 @@ import {
     rotateSession,
     endAllSessions,
     getCurrentUser,
+    findOrCreateGoogleUser,
 } from "./auth.service";
+import {
+    REFRESH_COOKIE,
+    setAuthCookies,
+    clearAuthCookies,
+    GOOGLE_STATE_COOKIE,
+    setGoogleOAuthCookies,
+    GOOGLE_VERIFIER_COOKIE,
+    clearGoogleOAuthCookies,
+} from "./auth.cookies";
+
+const googleClaimsSchema = z.object({
+    sub: z.string(),
+    email: z.string(),
+    email_verified: z.boolean(),
+    name: z.string().optional(),
+});
 
 export const register: RequestHandler = async (req, res) => {
     const user = await registerUser(req.body as RegisterInput);
@@ -77,6 +90,74 @@ export const googleSignIn: RequestHandler = async (_req, res) => {
 
     setGoogleOAuthCookies(res, state, codeVerifier);
     res.redirect(302, url.toString());
+};
+
+export const googleCallback: RequestHandler = async (req, res) => {
+    const { code, state, error } = req.query;
+    const storedState = req.cookies[GOOGLE_STATE_COOKIE] as string | undefined;
+    const codeVerifier = req.cookies[GOOGLE_VERIFIER_COOKIE] as
+        string | undefined;
+
+    clearGoogleOAuthCookies(res);
+
+    if (error) {
+        return res.redirect(
+            302,
+            `/login?error=${GOOGLE_AUTH_ERRORS.cancelled}`,
+        );
+    }
+
+    if (
+        typeof code !== "string" ||
+        typeof state !== "string" ||
+        !storedState ||
+        !codeVerifier ||
+        state !== storedState
+    ) {
+        return res.redirect(
+            302,
+            `/login?error=${GOOGLE_AUTH_ERRORS.invalid_state}`,
+        );
+    }
+
+    try {
+        const tokens = await google.validateAuthorizationCode(
+            code,
+            codeVerifier,
+        );
+        const claims = googleClaimsSchema.parse(
+            decodeIdToken(tokens.idToken()),
+        );
+
+        if (!claims.email_verified) {
+            return res.redirect(
+                302,
+                `/login?error=${GOOGLE_AUTH_ERRORS.email_unverified}`,
+            );
+        }
+
+        const user = await findOrCreateGoogleUser({
+            sub: claims.sub,
+            email: claims.email,
+            name: claims.name,
+        });
+        const session = await createSession(user.id);
+
+        setAuthCookies(res, session);
+        return res.redirect(302, "/profile");
+    } catch (err) {
+        if (
+            err instanceof AppError &&
+            err.code === GOOGLE_AUTH_ERRORS.account_exists
+        ) {
+            return res.redirect(
+                302,
+                `/login?error=${GOOGLE_AUTH_ERRORS.account_exists}`,
+            );
+        }
+        console.error("Google OAuth callback error", err);
+        return res.redirect(302, `/login?error=${GOOGLE_AUTH_ERRORS.failed}`);
+    }
 };
 
 export const refresh: RequestHandler = async (req, res) => {

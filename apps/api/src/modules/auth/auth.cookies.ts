@@ -51,3 +51,8 @@ export const setGoogleOAuthCookies = (
     res.cookie(GOOGLE_STATE_COOKIE, state, options);
     res.cookie(GOOGLE_VERIFIER_COOKIE, codeVerifier, options);
 };
+
+export const clearGoogleOAuthCookies = (res: Response) => {
+    res.clearCookie(GOOGLE_STATE_COOKIE, baseOptions);
+    res.clearCookie(GOOGLE_VERIFIER_COOKIE, baseOptions);
+};
