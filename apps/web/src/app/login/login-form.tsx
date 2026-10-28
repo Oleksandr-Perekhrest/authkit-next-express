@@ -2,6 +2,7 @@
 
 // outsource dependencies
 import Link from "next/link";
+import { toast } from "sonner";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -41,12 +42,20 @@ export default function LoginForm({
                 body: JSON.stringify(data),
             });
             setUser(response.user);
+            toast.success("Logged in");
             router.replace("/profile");
         } catch (err) {
-            applyApiError(err, setError, {
-                fields: ["email", "password"],
-                codeMap: { INVALID_CREDENTIALS: "root", RATE_LIMITED: "root" },
-            });
+            if (
+                !applyApiError(err, setError, {
+                    fields: ["email", "password"],
+                    codeMap: {
+                        INVALID_CREDENTIALS: "root",
+                        RATE_LIMITED: "root",
+                    },
+                })
+            ) {
+                toast.error("Something went wrong. Please try again.");
+            }
         }
     }
 

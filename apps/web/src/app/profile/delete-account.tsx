@@ -1,6 +1,7 @@
 "use client";
 
 // outsource dependencies
+import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -13,10 +14,8 @@ export default function DeleteAccount() {
     const { clearUser } = useAuth();
     const dialogRef = useRef<HTMLDialogElement>(null);
     const [pending, setPending] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     function openDialog() {
-        setError(null);
         dialogRef.current?.showModal();
     }
 
@@ -26,15 +25,14 @@ export default function DeleteAccount() {
 
     async function handleDelete() {
         setPending(true);
-        setError(null);
         try {
             await apiFetch("/users/me", { method: "DELETE" });
             clearUser();
+            toast.success("Account deleted");
             router.replace("/");
-        } catch (err) {
-            setError(
-                err instanceof Error ? err.message : "Something went wrong",
-            );
+        } catch {
+            dialogRef.current?.close();
+            toast.error("Something went wrong. Please try again.");
             setPending(false);
         }
     }
@@ -65,14 +63,6 @@ export default function DeleteAccount() {
                     This permanently deletes your account and all sessions. This
                     action cannot be undone.
                 </p>
-                {error && (
-                    <p
-                        role="alert"
-                        className="mt-3 text-sm text-red-600 dark:text-red-400"
-                    >
-                        {error}
-                    </p>
-                )}
                 <div className="mt-6 flex justify-end gap-3">
                     <button
                         type="button"

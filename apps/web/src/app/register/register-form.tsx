@@ -2,6 +2,7 @@
 
 // outsource dependencies
 import Link from "next/link";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { registerSchema } from "@authkit/shared";
@@ -32,12 +33,17 @@ export default function RegisterForm() {
                 body: JSON.stringify(data),
             });
             setUser(response.user);
+            toast.success("Account created");
             router.replace("/profile");
         } catch (err) {
-            applyApiError(err, setError, {
-                fields: ["name", "email", "password"],
-                codeMap: { EMAIL_TAKEN: "email", RATE_LIMITED: "root" },
-            });
+            if (
+                !applyApiError(err, setError, {
+                    fields: ["name", "email", "password"],
+                    codeMap: { EMAIL_TAKEN: "email", RATE_LIMITED: "root" },
+                })
+            ) {
+                toast.error("Something went wrong. Please try again.");
+            }
         }
     }
 
