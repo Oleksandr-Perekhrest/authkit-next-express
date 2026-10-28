@@ -1,0 +1,40 @@
+@host = http://localhost:4000
+
+### Update name
+PATCH {{host}}/users/me
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### Clear name (null)
+PATCH {{host}}/users/me
+Content-Type: application/json
+
+{
+  "name": null
+}
+
+### Invalid name: empty string (400)
+PATCH {{host}}/users/me
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Register throwaway user (cookies switch to it)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "delete-{{$timestamp}}@example.com",
+  "password": "password123"
+}
+
+### Delete account
+DELETE {{host}}/users/me
+
+### Me after delete (401)
+GET {{host}}/auth/me

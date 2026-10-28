@@ -3,6 +3,7 @@ import { Router } from "express";
 import { loginSchema, registerSchema } from "@authkit/shared";
 
 // local dependencies
+import { noStore } from "../../middleware/no-store";
 import { validateBody } from "../../middleware/validate";
 import { requireAuth } from "../../middleware/require-auth";
 import { loginLimiter, registerLimiter } from "../../middleware/rate-limit";
@@ -17,10 +18,7 @@ import {
 
 export const authRouter = Router();
 
-authRouter.use((_req, res, next) => {
-    res.set("Cache-Control", "no-store");
-    next();
-});
+authRouter.use(noStore);
 
 authRouter.post(
     "/register",
