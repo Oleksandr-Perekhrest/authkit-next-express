@@ -17,6 +17,11 @@ import {
 
 export const authRouter = Router();
 
+authRouter.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+});
+
 authRouter.post(
     "/register",
     registerLimiter,
