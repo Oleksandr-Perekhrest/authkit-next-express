@@ -6,7 +6,7 @@ import { startRefreshTokenCleanup } from "./jobs/cleanup-refresh-tokens";
 
 const app = createApp();
 const server = app.listen(env.PORT, "0.0.0.0", () => {
-    console.log(`api listening on http://localhost:${env.PORT}`);
+    console.log(`api listening on port ${env.PORT}`);
     startRefreshTokenCleanup();
 });
 
