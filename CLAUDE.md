@@ -1,63 +1,71 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Project overview
 
-## Overview
+Full-stack auth demo: email/password + Google OAuth with JWT access tokens and rotating refresh
+tokens in httpOnly cookies.
 
-Full-stack auth project: Next.js 16 frontend + Express 5 API in a pnpm monorepo. Planned features: email/password auth, JWT access/refresh tokens in httpOnly cookies, Google OAuth. Currently early-stage.
+- `apps/web` — Next.js 16 (App Router), React 19, Tailwind CSS v4 · deployed on Vercel
+- `apps/api` — Express 5, bundled to ESM via tsdown · deployed on Render
+- `packages/shared` — Zod schemas and inferred types consumed by both apps
 
-- `apps/web` — Next.js 16 (App Router), React 19, Tailwind CSS v4
-- `apps/api` — Express 5, bundled to ESM with tsdown
-- `packages/shared` — Zod schemas and inferred types shared across both apps
+The browser targets the Vercel domain. Next.js rewrites `/api/*` → Render so cookies stay
+first-party. Database: Prisma Postgres (Frankfurt), accessed from the API only.
 
 ## Commands
 
-Run from repo root:
-
 ```bash
-pnpm dev          # start web (port 3000) and api (port 4000) in parallel
-pnpm build        # build all packages
-pnpm lint         # ESLint across the whole repo
-pnpm typecheck    # type-check all packages
-pnpm format       # Prettier (write)
-pnpm format:check # Prettier (check only)
-```
+pnpm install                            # install deps + install git hooks (lefthook)
+pnpm dev                                # web :3000 and api :4000 in parallel
+pnpm db:up / pnpm db:down               # start / stop local Postgres via Docker
 
-Run in a specific package (e.g. `apps/api`):
+pnpm --filter @authkit/api db:migrate   # prisma migrate dev
+pnpm --filter @authkit/api db:generate  # prisma generate
+pnpm --filter @authkit/api db:studio    # prisma studio
 
-```bash
-pnpm --filter @authkit/api dev
-pnpm --filter @authkit/web typecheck
+pnpm typecheck                          # tsc across all packages
+pnpm lint                               # ESLint across the whole repo
+pnpm format:check                       # Prettier check (write: pnpm format)
+pnpm build                              # build all packages
 ```
 
 ## Architecture
 
 ### Shared package (`@authkit/shared`)
 
-`packages/shared/src/index.ts` exports Zod schemas and their inferred types. Both apps import from `@authkit/shared` (resolved via `exports: { ".": "./src/index.ts" }` — source is consumed directly, no build step).
+`packages/shared/src/index.ts` exports Zod schemas and inferred types. Both apps import from
+`@authkit/shared` (source consumed directly via `exports: { ".": "./src/index.ts" }` — no build step).
 
-- In `apps/web`: transpiled at Next.js build time via `transpilePackages: ["@authkit/shared"]` in `next.config.ts`.
-- In `apps/api`: bundled into `dist/index.mjs` via `deps.alwaysBundle: ["@authkit/shared"]` in `tsdown.config.ts`.
+- **`apps/web`**: transpiled at build time via `transpilePackages: ["@authkit/shared"]` in `next.config.ts`.
+- **`apps/api`**: bundled into `dist/index.mjs` via `deps.alwaysBundle: ["@authkit/shared"]` in `tsdown.config.ts`.
 
 ### API (`apps/api`)
 
-Entry: `src/index.ts`. Dev runs with `tsx watch`, production runs the tsdown-bundled `dist/index.mjs`. Reads `PORT` from env (default 4000). Env vars loaded from `.env` via `--env-file-if-exists`.
+Entry: `src/index.ts`. Dev runs with `tsx watch`, production runs the tsdown-bundled `dist/index.mjs`.
+Env vars loaded from `.env` via `--env-file-if-exists` (default `PORT=4000`). Modules in `src/modules/`
+follow a routes → controller → service layering. Env is validated and typed in `src/config/env.ts`.
 
 ### Web (`apps/web`)
 
-Next.js App Router, server components by default. Turbopack handles CSS via `@tailwindcss/turbopack`. `API_URL` env var points to the Express API. Type-checking runs `next typegen` before `tsc --noEmit`.
+Next.js App Router, server components by default. Tailwind CSS handled by `@tailwindcss/turbopack`
+loader configured in `next.config.ts`. `API_URL` env var points to the Express API.
+Type-checking runs `next typegen` before `tsc --noEmit`.
 
 ### ESLint
 
-Root `eslint.config.mjs` applies different rule sets by file path: Next.js + React rules for `apps/web`, Node + TypeScript-eslint for `apps/api` and `packages/shared`. Prettier is applied last to disable formatting rules.
+Root `eslint.config.mjs` routes by file path: Next.js + React rules for `apps/web`, Node +
+TypeScript-eslint for `apps/api` and `packages/shared`. Prettier applied last.
 
 ### Dependency catalog
 
-Shared dependency versions (TypeScript, Zod, `@types/node`) are pinned in `pnpm-workspace.yaml` under `catalog:` and referenced as `catalog:` in individual `package.json` files.
+TypeScript, Zod, and `@types/node` are pinned in `pnpm-workspace.yaml` under `catalog:` and
+referenced as `catalog:` in `package.json` files.
 
 ## Next.js version note
 
-This project uses Next.js 16, which has breaking API changes from earlier versions. Before writing any Next.js code, check `apps/web/node_modules/next/dist/docs/` for accurate API reference. The `AGENTS.md` file in `apps/web` is auto-generated by `next dev` — commit it to keep the tree clean.
+This project uses Next.js 16, which has breaking API changes from earlier versions. Before writing
+any Next.js code, check `apps/web/node_modules/next/dist/docs/` for accurate API reference.
+The `AGENTS.md` file in `apps/web` is auto-generated by `next dev` — commit it to keep the tree clean.
 
 ## Environment setup
 
@@ -66,4 +74,38 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-`.env.example` files define the required variables (`PORT` for api, `API_URL` for web).
+API variables: `PORT`, `TRUST_PROXY`, `DATABASE_URL`, `CORS_ORIGIN`, `JWT_ACCESS_SECRET`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`.
+
+Web variables: `API_URL`.
+
+## Code style
+
+**Indentation:** 4 spaces everywhere; JSON, YAML, and Markdown use 2. Enforced by Prettier.
+
+**Imports:** two groups separated by a blank line, each sorted by line length (shortest first):
+
+```ts
+// outsource dependencies
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { loginSchema } from "@authkit/shared";
+
+// local dependencies
+import TextField from "@/components/text-field";
+import { applyApiError } from "@/lib/form-errors";
+```
+
+- **outsource** — npm packages, Node built-ins (`node:*`), workspace packages (`@authkit/*`)
+- **local** — relative paths, and the `@/` alias (`apps/web/src/`, web only)
+
+**Shared types:** Zod schemas and inferred types live in `packages/shared/src/`. Always import
+them as `@authkit/shared` — they go in the outsource group.
+
+## Workflow rules
+
+- **Do NOT** commit, push, or create/switch branches — the developer does that.
+- Finish every task by running: `pnpm typecheck && pnpm lint && pnpm format:check`
+- When adding or changing API routes, update the matching `.http` file in `apps/api/http/`.
+- Commit messages and PR titles follow **Conventional Commits** — the PR title becomes the squash commit.
+- **Git hooks (lefthook):** pre-commit auto-fixes lint/format on staged files; pre-push mirrors CI.
