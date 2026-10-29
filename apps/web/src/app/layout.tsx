@@ -9,7 +9,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import UrlToast from "@/components/url-toast";
 import SiteHeader from "@/components/site-header";
+import WarmUpPing from "@/components/warm-up-ping";
 import AuthProvider from "@/components/auth-provider";
+import SlowRequestBanner from "@/components/slow-request-banner";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -45,6 +47,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                         <UrlToast />
                     </Suspense>
                 </AuthProvider>
+                <WarmUpPing />
+                <SlowRequestBanner />
             </body>
         </html>
     );

@@ -1,6 +1,9 @@
 // outsource dependencies
 import "client-only";
 
+// local dependencies
+import { trackRequest } from "./request-tracker";
+
 export class ApiError extends Error {
     readonly status: number;
     readonly code: string;
@@ -81,23 +84,29 @@ export async function apiFetch<T>(
     path: string,
     options?: RequestInit,
 ): Promise<T> {
+    const done = trackRequest();
     const url = `/api${path}`;
-    const res = await fetchWithHeaders(url, options);
-
-    if (res.ok) return readOk<T>(res);
-    if (res.status !== 401 || SKIP_REFRESH_PATHS.has(path))
-        throw await parseApiError(res);
-
-    const originalError = await parseApiError(res);
-
     try {
-        await singleFlightRefresh();
-    } catch (err) {
-        if (err instanceof ApiError && err.status === 401) throw originalError;
-        throw err;
-    }
+        const res = await fetchWithHeaders(url, options);
 
-    const retryRes = await fetchWithHeaders(url, options);
-    if (retryRes.ok) return readOk<T>(retryRes);
-    throw await parseApiError(retryRes);
+        if (res.ok) return readOk<T>(res);
+        if (res.status !== 401 || SKIP_REFRESH_PATHS.has(path))
+            throw await parseApiError(res);
+
+        const originalError = await parseApiError(res);
+
+        try {
+            await singleFlightRefresh();
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 401)
+                throw originalError;
+            throw err;
+        }
+
+        const retryRes = await fetchWithHeaders(url, options);
+        if (retryRes.ok) return readOk<T>(retryRes);
+        throw await parseApiError(retryRes);
+    } finally {
+        done();
+    }
 }
