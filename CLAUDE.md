@@ -74,7 +74,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-API variables: `PORT`, `TRUST_PROXY`, `DATABASE_URL`, `CORS_ORIGIN`, `JWT_ACCESS_SECRET`,
+API variables: `PORT`, `TRUST_PROXY`, `DATABASE_URL`, `JWT_ACCESS_SECRET`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`.
 
 Web variables: `API_URL`.

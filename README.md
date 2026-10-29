@@ -185,7 +185,6 @@ automatically.
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `DATABASE_URL`         | Direct connection string from Prisma Postgres (pooling off), with `sslmode=verify-full` |
 | `JWT_ACCESS_SECRET`    | HS256 signing secret, min 32 chars — generate with `openssl rand -base64 48`            |
-| `CORS_ORIGIN`          | Vercel app URL, e.g. `https://authkit-web.vercel.app`                                   |
 | `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                                  |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                                              |
 | `GOOGLE_REDIRECT_URI`  | Must match the OAuth console: `https://<vercel-domain>/api/auth/google/callback`        |
