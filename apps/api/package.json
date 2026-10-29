@@ -9,6 +9,7 @@
     "prisma.config.ts"
   ],
   "scripts": {
+    "test": "vitest run",
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "build": "prisma generate --no-hints && tsdown",
     "start": "node --env-file-if-exists=.env dist/index.mjs",
@@ -24,10 +25,10 @@
     "@types/node": "catalog:",
     "tsdown": "^0.23.2",
     "tsx": "^4.23.15",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
-    "prisma": "^7.10.1",
     "@authkit/shared": "workspace:*",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
@@ -39,6 +40,7 @@
     "helmet": "^8.3.0",
     "jose": "^6.2.13",
     "pg": "^8.23.1",
+    "prisma": "^7.10.1",
     "zod": "catalog:"
   }
 }
