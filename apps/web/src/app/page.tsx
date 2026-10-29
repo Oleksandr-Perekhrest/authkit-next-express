@@ -4,9 +4,9 @@ import GradientBackground from "@/components/gradient-background";
 
 export default function Home() {
     return (
-        <main className="relative isolate flex flex-1 overflow-hidden">
+        <main className="relative isolate flex flex-1">
             <GradientBackground variant="home" />
-            <div className="flex flex-1 items-center justify-center px-4 py-16">
+            <div className="flex w-full flex-col items-center px-4 pb-16 pt-10">
                 <HomeHero />
             </div>
         </main>

@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { LoginInput, UserResponse } from "@authkit/shared";
 
 // local dependencies
+import Button from "@/components/button";
 import { apiFetch } from "@/lib/api-client";
 import TextField from "@/components/text-field";
 import { applyApiError } from "@/lib/form-errors";
@@ -80,13 +81,9 @@ export default function LoginForm() {
                     {errors.root.message}
                 </p>
             )}
-            <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? "Logging in…" : "Log in"}
-            </button>
+            </Button>
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
                 <span className="text-sm text-neutral-500">or</span>

@@ -10,6 +10,8 @@ import { X, Save, Pencil, Trash2 } from "lucide-react";
 import type { UserResponse, UpdateProfileInput } from "@authkit/shared";
 
 // local dependencies
+import { cn } from "@/lib/cn";
+import Button from "@/components/button";
 import { applyApiError } from "@/lib/form-errors";
 import { useAuth } from "@/components/auth-provider";
 import { ApiError, apiFetch } from "@/lib/api-client";
@@ -109,24 +111,26 @@ export default function EditNameForm({ user }: Props) {
                     aria-label={isEmpty ? "Remove name" : "Save name"}
                     title={isEmpty ? "Remove name" : "Save name"}
                     disabled={isSubmitting}
-                    className={
+                    className={cn(
+                        "rounded p-1 focus:outline-hidden focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
                         isEmpty
-                            ? "rounded p-1 text-red-500 hover:text-red-700 focus:outline-hidden focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-                            : "rounded p-1 text-blue-600 hover:text-blue-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    }
+                            ? "text-red-500 hover:text-red-700 focus:ring-red-500"
+                            : "text-blue-600 hover:text-blue-800 focus:ring-blue-500",
+                    )}
                 >
                     {isEmpty ? <Trash2 size={16} /> : <Save size={16} />}
                 </button>
-                <button
+                <Button
+                    variant="icon"
                     type="button"
                     aria-label="Cancel"
                     title="Cancel"
                     disabled={isSubmitting}
                     onClick={handleCancel}
-                    className="rounded p-1 text-neutral-400 hover:text-neutral-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-500 dark:hover:text-neutral-300"
+                    className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
                 >
                     <X size={16} />
-                </button>
+                </Button>
             </div>
             {errors.name && (
                 <p
