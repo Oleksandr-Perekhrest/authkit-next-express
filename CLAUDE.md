@@ -23,6 +23,7 @@ pnpm --filter @authkit/api db:migrate   # prisma migrate dev
 pnpm --filter @authkit/api db:generate  # prisma generate
 pnpm --filter @authkit/api db:studio    # prisma studio
 
+pnpm test                               # Vitest unit tests across all packages
 pnpm typecheck                          # tsc across all packages
 pnpm lint                               # ESLint across the whole repo
 pnpm format:check                       # Prettier check (write: pnpm format)
@@ -105,10 +106,28 @@ import { applyApiError } from "@/lib/form-errors";
 **Shared types:** Zod schemas and inferred types live in `packages/shared/src/`. Always import
 them as `@authkit/shared` — they go in the outsource group.
 
+## Testing
+
+**Framework:** Vitest (same version across all packages, declared in each package's `devDependencies`).
+
+**Location:** unit tests live next to the source file they test, named `*.test.ts`.
+
+**Imports:** always import test utilities explicitly from `vitest` — no globals:
+
+```ts
+import { vi, it, expect, describe, beforeEach } from "vitest";
+```
+
+**Test environment values** (e.g. JWT secrets, database URL) are declared in `vitest.config.ts`
+under `test.env` for the API, or via module mocking (`vi.mock`, `vi.stubGlobal`) for the web.
+
+**Do not change source behaviour to make tests pass.** If a test reveals a bug, report it instead
+of patching it inside the test.
+
 ## Workflow rules
 
 - **Do NOT** commit, push, or create/switch branches — the developer does that.
-- Finish every task by running: `pnpm typecheck && pnpm lint && pnpm format:check`
+- Finish every task by running: `pnpm test && pnpm typecheck && pnpm lint && pnpm format:check`
 - When adding or changing API routes, update the matching `.http` file in `apps/api/http/`.
 - Commit messages and PR titles follow **Conventional Commits** — the PR title becomes the squash commit.
 - **Git hooks (lefthook):** pre-commit auto-fixes lint/format on staged files; pre-push mirrors CI.

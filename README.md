@@ -131,6 +131,7 @@ pnpm dev
 | Script              | Description                      |
 | ------------------- | -------------------------------- |
 | `pnpm dev`          | Run web and api in watch mode    |
+| `pnpm test`         | Run Vitest unit tests            |
 | `pnpm build`        | Build all packages               |
 | `pnpm lint`         | Lint the whole repo              |
 | `pnpm typecheck`    | Type-check all packages          |
@@ -153,7 +154,8 @@ Fixed files are re-staged automatically before the commit lands.
 1. `pnpm format:check`
 2. `pnpm lint`
 3. `pnpm typecheck`
-4. `pnpm build`
+4. `pnpm test`
+5. `pnpm build`
 
 To skip the pre-push hook in exceptional cases: `git push --no-verify`.
 

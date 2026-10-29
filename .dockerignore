@@ -16,6 +16,8 @@ apps/web/*
 
 # API test files — not needed for building or running the API image
 apps/api/http
+apps/api/vitest.config.ts
+apps/api/src/**/*.test.ts
 
 # Secrets — must never be baked into the image
 .env
