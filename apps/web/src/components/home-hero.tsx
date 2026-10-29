@@ -1,16 +1,8 @@
 "use client";
 
-// outsource dependencies
-import Link from "next/link";
-
 // local dependencies
 import { useAuth } from "@/components/auth-provider";
-
-const primaryBtn =
-    "rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700";
-
-const secondaryBtn =
-    "rounded border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-600 dark:hover:bg-neutral-800";
+import Button, { ButtonLink } from "@/components/button";
 
 export default function HomeHero() {
     const { status, user, reload } = useAuth();
@@ -37,9 +29,9 @@ export default function HomeHero() {
                 <p className="text-neutral-600 dark:text-neutral-400">
                     Could not load your session.
                 </p>
-                <button type="button" onClick={reload} className={primaryBtn}>
+                <Button type="button" onClick={reload} className="px-4">
                     Try again
-                </button>
+                </Button>
             </div>
         );
     }
@@ -53,9 +45,9 @@ export default function HomeHero() {
                 <p className="text-lg text-neutral-600 dark:text-neutral-400">
                     You&apos;re signed in and ready to go.
                 </p>
-                <Link href="/profile" className={primaryBtn}>
+                <ButtonLink href="/profile" className="px-4">
                     Go to profile
-                </Link>
+                </ButtonLink>
             </div>
         );
     }
@@ -70,12 +62,12 @@ export default function HomeHero() {
                 Express 5.
             </p>
             <div className="flex gap-3">
-                <Link href="/register" className={primaryBtn}>
+                <ButtonLink href="/register" className="px-4">
                     Create account
-                </Link>
-                <Link href="/login" className={secondaryBtn}>
+                </ButtonLink>
+                <ButtonLink variant="outline" href="/login">
                     Log in
-                </Link>
+                </ButtonLink>
             </div>
         </div>
     );

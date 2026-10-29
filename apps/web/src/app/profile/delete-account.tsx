@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // local dependencies
+import Button from "@/components/button";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/components/auth-provider";
 
@@ -64,15 +65,16 @@ export default function DeleteAccount() {
                     action cannot be undone.
                 </p>
                 <div className="mt-6 flex justify-end gap-3">
-                    <button
+                    <Button
+                        variant="outline"
                         type="button"
                         autoFocus
                         onClick={closeDialog}
                         disabled={pending}
-                        className="rounded border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        className="text-neutral-700 dark:text-neutral-200"
                     >
                         Cancel
-                    </button>
+                    </Button>
                     <button
                         type="button"
                         onClick={handleDelete}

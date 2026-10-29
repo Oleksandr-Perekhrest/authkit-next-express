@@ -1,3 +1,6 @@
+// local dependencies
+import { cn } from "@/lib/cn";
+
 type Variant = "home" | "login" | "register" | "profile";
 
 type VariantConfig = {
@@ -36,7 +39,10 @@ export default function GradientBackground({ variant }: Props) {
     return (
         <div
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${base}`}
+            className={cn(
+                "pointer-events-none absolute inset-0 -z-10 overflow-hidden",
+                base,
+            )}
         >
             <div className={shape1} />
             <div className={shape2} />

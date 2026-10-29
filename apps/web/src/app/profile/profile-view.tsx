@@ -4,6 +4,7 @@
 import Link from "next/link";
 
 // local dependencies
+import Button from "@/components/button";
 import EditNameForm from "./edit-name-form";
 import DeleteAccount from "./delete-account";
 import { useAuth } from "@/components/auth-provider";
@@ -24,13 +25,9 @@ export default function ProfileView() {
                 >
                     Something went wrong
                 </p>
-                <button
-                    type="button"
-                    onClick={reload}
-                    className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                >
+                <Button type="button" onClick={reload} className="w-full">
                     Try again
-                </button>
+                </Button>
             </div>
         );
     }
