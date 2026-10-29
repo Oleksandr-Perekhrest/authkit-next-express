@@ -12,6 +12,9 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     GOOGLE_REDIRECT_URI: z.url(),
+    // Per-window request limits for rate limiters; override in tests to avoid blocking
+    REGISTER_RATE_LIMIT: z.coerce.number().int().positive().default(5),
+    LOGIN_RATE_LIMIT: z.coerce.number().int().positive().default(10),
 });
 
 const parsed = envSchema.safeParse(process.env);

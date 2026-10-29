@@ -128,15 +128,31 @@ pnpm dev
 - Web: <http://localhost:3000>
 - API: <http://localhost:4000/health>
 
-| Script              | Description                      |
-| ------------------- | -------------------------------- |
-| `pnpm dev`          | Run web and api in watch mode    |
-| `pnpm test`         | Run Vitest unit tests            |
-| `pnpm build`        | Build all packages               |
-| `pnpm lint`         | Lint the whole repo              |
-| `pnpm typecheck`    | Type-check all packages          |
-| `pnpm format`       | Format with Prettier             |
-| `pnpm format:check` | Check formatting without writing |
+| Script                  | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `pnpm dev`              | Run web and api in watch mode                  |
+| `pnpm test`             | Run Vitest unit tests                          |
+| `pnpm test:integration` | Run API integration tests (requires Docker DB) |
+| `pnpm build`            | Build all packages                             |
+| `pnpm lint`             | Lint the whole repo                            |
+| `pnpm typecheck`        | Type-check all packages                        |
+| `pnpm format`           | Format with Prettier                           |
+| `pnpm format:check`     | Check formatting without writing               |
+
+## Integration tests
+
+Integration tests run against a real Postgres database named `authkit_test`. Docker must be running.
+
+```bash
+# start the database (if not already running)
+docker compose up -d db
+
+pnpm test:integration
+```
+
+The test suite creates the `authkit_test` database and runs all Prisma migrations automatically on
+first run. Each test file truncates all tables in `beforeEach` so tests are isolated. The database
+is kept between runs to avoid recreating it on every invocation.
 
 ## Git hooks
 
@@ -155,7 +171,8 @@ Fixed files are re-staged automatically before the commit lands.
 2. `pnpm lint`
 3. `pnpm typecheck`
 4. `pnpm test`
-5. `pnpm build`
+5. `pnpm test:integration`
+6. `pnpm build`
 
 To skip the pre-push hook in exceptional cases: `git push --no-verify`.
 

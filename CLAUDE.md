@@ -24,6 +24,7 @@ pnpm --filter @authkit/api db:generate  # prisma generate
 pnpm --filter @authkit/api db:studio    # prisma studio
 
 pnpm test                               # Vitest unit tests across all packages
+pnpm test:integration                   # Vitest integration tests for apps/api (requires Docker DB)
 pnpm typecheck                          # tsc across all packages
 pnpm lint                               # ESLint across the whole repo
 pnpm format:check                       # Prettier check (write: pnpm format)
@@ -121,13 +122,24 @@ import { vi, it, expect, describe, beforeEach } from "vitest";
 **Test environment values** (e.g. JWT secrets, database URL) are declared in `vitest.config.ts`
 under `test.env` for the API, or via module mocking (`vi.mock`, `vi.stubGlobal`) for the web.
 
+**Integration tests** live in `apps/api/test/` with a separate config (`vitest.integration.config.ts`).
+They run against a real `authkit_test` Postgres database. Key conventions:
+
+- A safety guard in both `globalSetup` and the DB helper rejects any `DATABASE_URL` that does not
+  target `authkit_test`, preventing accidental mutations of dev or prod data.
+- Each test suite calls `truncateAll()` in `beforeEach` to reset the database between tests.
+- Tests run sequentially (`fileParallelism: false`) to avoid inter-test interference.
+- Simulating time passage (e.g. for grace-window tests) is done by backdating the `revokedAt`
+  column directly in SQL — no fake timers needed.
+- Docker must be running and `pnpm db:up` must have been called before running integration tests locally.
+
 **Do not change source behaviour to make tests pass.** If a test reveals a bug, report it instead
 of patching it inside the test.
 
 ## Workflow rules
 
 - **Do NOT** commit, push, or create/switch branches — the developer does that.
-- Finish every task by running: `pnpm test && pnpm typecheck && pnpm lint && pnpm format:check`
+- Finish every task by running: `pnpm test && pnpm test:integration && pnpm typecheck && pnpm lint && pnpm format:check`
 - When adding or changing API routes, update the matching `.http` file in `apps/api/http/`.
 - Commit messages and PR titles follow **Conventional Commits** — the PR title becomes the squash commit.
 - **Git hooks (lefthook):** pre-commit auto-fixes lint/format on staged files; pre-push mirrors CI.
