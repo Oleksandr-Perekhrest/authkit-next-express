@@ -2,6 +2,7 @@
 import { rateLimit, type Options } from "express-rate-limit";
 
 // local dependencies
+import { env } from "../config/env";
 import { AppError } from "../lib/app-error";
 
 const baseOptions: Partial<Options> = {
@@ -21,12 +22,12 @@ const baseOptions: Partial<Options> = {
 export const loginLimiter = rateLimit({
     ...baseOptions,
     windowMs: 15 * 60 * 1000,
-    limit: 10,
+    limit: env.LOGIN_RATE_LIMIT,
     skipSuccessfulRequests: true,
 });
 
 export const registerLimiter = rateLimit({
     ...baseOptions,
     windowMs: 60 * 60 * 1000,
-    limit: 5,
+    limit: env.REGISTER_RATE_LIMIT,
 });

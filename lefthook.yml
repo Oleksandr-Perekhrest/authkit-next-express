@@ -20,5 +20,7 @@ pre-push:
       run: pnpm typecheck
     - name: test
       run: pnpm test
+    - name: test:integration
+      run: pnpm test:integration
     - name: build
       run: pnpm build

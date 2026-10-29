@@ -9,6 +9,7 @@
     "prepare": "node -e \"if (!process.env.CI) require('child_process').execSync('lefthook install', {stdio:'inherit'})\"",
     "dev": "pnpm -r --parallel --stream dev",
     "test": "pnpm -r test",
+    "test:integration": "pnpm --filter @authkit/api test:integration",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
