@@ -11,6 +11,7 @@ import type {
 } from "@authkit/shared";
 
 // local dependencies
+import { env } from "../../config/env";
 import { google } from "../../lib/google";
 import { AppError } from "../../lib/app-error";
 import { toPublicUser } from "../users/users.service";
@@ -40,6 +41,8 @@ const googleClaimsSchema = z.object({
     email: z.string(),
     email_verified: z.boolean(),
     name: z.string().optional(),
+    aud: z.literal(env.GOOGLE_CLIENT_ID),
+    iss: z.enum(["https://accounts.google.com", "accounts.google.com"]),
 });
 
 const withToast = (path: string, code: AuthToastCode): string =>
