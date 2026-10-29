@@ -157,6 +157,10 @@ Fixed files are re-staged automatically before the commit lands.
 
 To skip the pre-push hook in exceptional cases: `git push --no-verify`.
 
+## Contributing
+
+PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/) because the title becomes the squash-merge commit message.
+
 ## Deployment
 
 ### Render
