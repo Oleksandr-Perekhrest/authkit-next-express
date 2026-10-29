@@ -137,6 +137,26 @@ pnpm dev
 | `pnpm format`       | Format with Prettier             |
 | `pnpm format:check` | Check formatting without writing |
 
+## Git hooks
+
+[Lefthook](https://github.com/evilmartians/lefthook) installs hooks automatically when you run `pnpm install` (via the `prepare` script).
+
+**pre-commit** — runs sequentially on staged files:
+
+1. `eslint --fix` on staged JS/TS files, using the root config (which applies Next.js rules to `apps/web` and Node/TS rules to `apps/api` and `packages/shared`).
+2. `prettier --write` on all staged files.
+
+Fixed files are re-staged automatically before the commit lands.
+
+**pre-push** — mirrors the CI workflow:
+
+1. `pnpm format:check`
+2. `pnpm lint`
+3. `pnpm typecheck`
+4. `pnpm build`
+
+To skip the pre-push hook in exceptional cases: `git push --no-verify`.
+
 ## Deployment
 
 ### Render

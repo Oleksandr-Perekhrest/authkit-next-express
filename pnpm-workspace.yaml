@@ -8,6 +8,7 @@ allowBuilds:
   "@prisma/engines": true
   argon2: true
   esbuild: true
+  lefthook: false
   prisma: true
   sharp: false
   unrs-resolver: false
