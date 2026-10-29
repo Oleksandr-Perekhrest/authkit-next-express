@@ -198,6 +198,46 @@ Set the **root directory** to `apps/web`. No build command override is needed.
 | --------- | ----------------------------------------------------------- |
 | `API_URL` | Render service URL, e.g. `https://authkit-api.onrender.com` |
 
+## Run the production image locally
+
+Use this to verify the image before merging PRs that touch the Dockerfile, dependencies, or
+install scripts.
+
+```bash
+cp apps/api/.env.docker.example apps/api/.env.docker
+```
+
+Edit `apps/api/.env.docker`: fill in `JWT_ACCESS_SECRET` (generate with
+`openssl rand -base64 48`) and copy your Google credentials from `apps/api/.env`.
+
+Build the image with the same Dockerfile and context used by CI and Render:
+
+```bash
+docker build -f apps/api/Dockerfile -t authkit-api:local .
+```
+
+Run it:
+
+```bash
+docker run --rm \
+  --env-file apps/api/.env.docker \
+  -p 4000:4000 \
+  --add-host=host.docker.internal:host-gateway \
+  authkit-api:local
+```
+
+`--add-host` maps `host.docker.internal` to the host on Linux; Docker Desktop resolves it
+automatically on macOS and Windows.
+
+**Expected output:** Prisma migrations run on start, followed by `api listening on port 4000`.
+Verify with:
+
+```bash
+curl localhost:4000/health
+```
+
+→ HTTP 200.
+
 ## Project structure
 
 ```
