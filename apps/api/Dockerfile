@@ -22,8 +22,10 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 
 # Mount the pnpm content-store for layer-cache reuse across builds
+# CI=true mirrors lefthook's own postinstall.js skip condition so the prepare
+# script does not call "lefthook install" (which needs git, absent in this image)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    CI=true pnpm install --frozen-lockfile
 
 # Application source — separate layer so code changes don't bust the install cache
 COPY apps/api ./apps/api

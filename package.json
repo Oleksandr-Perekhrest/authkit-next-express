@@ -6,7 +6,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "node -e \"if (!process.env.CI) require('child_process').execSync('lefthook install', {stdio:'inherit'})\"",
     "dev": "pnpm -r --parallel --stream dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
