@@ -39,6 +39,8 @@ RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
 # Self-contained production directory: resolves workspace:* references and keeps prod deps only
 # pnpm v10+ requires running from the workspace root with --filter
 RUN pnpm --filter @authkit/api deploy --prod /prod
+# pnpm deploy always writes workspace manifest files; the runtime does not need them
+RUN rm -f /prod/pnpm-lock.yaml /prod/pnpm-workspace.yaml
 
 # ─── runtime: minimal production image ────────────────────────────────────────
 FROM node:24-slim AS runtime

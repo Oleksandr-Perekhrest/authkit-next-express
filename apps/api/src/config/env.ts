@@ -8,7 +8,6 @@ const envSchema = z.object({
     PORT: z.coerce.number().int().positive().default(4000),
     TRUST_PROXY: z.coerce.number().int().nonnegative().default(0),
     DATABASE_URL: z.url(),
-    CORS_ORIGIN: z.url().optional(),
     JWT_ACCESS_SECRET: z.string().min(32),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),

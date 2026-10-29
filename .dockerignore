@@ -9,11 +9,13 @@ node_modules
 # Build artifacts — regenerated inside Docker
 **/dist
 apps/api/src/generated
-apps/web/.next
 
-# Web app source — not needed for the API image (package.json is still included for pnpm workspace resolution)
-apps/web/src
-apps/web/public
+# Web app — only package.json is COPY'd for pnpm workspace dep resolution; everything else is excluded
+apps/web/*
+!apps/web/package.json
+
+# API test files — not needed for building or running the API image
+apps/api/http
 
 # Secrets — must never be baked into the image
 .env

@@ -1,5 +1,4 @@
 // outsource dependencies
-import cors from "cors";
 import helmet from "helmet";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -20,9 +19,6 @@ export function createApp() {
     }
 
     app.use(helmet());
-    if (env.CORS_ORIGIN) {
-        app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-    }
     app.use(express.json({ limit: "100kb" }));
     app.use(cookieParser());
 

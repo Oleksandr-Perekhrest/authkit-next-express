@@ -27,6 +27,9 @@ pnpm typecheck                          # tsc across all packages
 pnpm lint                               # ESLint across the whole repo
 pnpm format:check                       # Prettier check (write: pnpm format)
 pnpm build                              # build all packages
+
+docker build -f apps/api/Dockerfile -t authkit-api:local .                                                                          # build production image (context: repo root)
+docker run --rm --env-file apps/api/.env.docker -p 4000:4000 --add-host=host.docker.internal:host-gateway authkit-api:local        # run it locally
 ```
 
 ## Architecture
@@ -74,7 +77,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-API variables: `PORT`, `TRUST_PROXY`, `DATABASE_URL`, `CORS_ORIGIN`, `JWT_ACCESS_SECRET`,
+API variables: `PORT`, `TRUST_PROXY`, `DATABASE_URL`, `JWT_ACCESS_SECRET`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`.
 
 Web variables: `API_URL`.
