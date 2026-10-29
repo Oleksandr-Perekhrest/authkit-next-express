@@ -13,7 +13,7 @@ export default function RegisterPage() {
         <main className="relative isolate flex flex-1 overflow-hidden">
             <GradientBackground variant="register" />
             <div className="flex flex-1 items-center justify-center px-4 py-16">
-                <Card title="Create an account">
+                <Card title="Create an account" variant="register">
                     <RegisterForm />
                 </Card>
             </div>

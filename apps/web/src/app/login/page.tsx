@@ -13,7 +13,7 @@ export default function LoginPage() {
         <main className="relative isolate flex flex-1 overflow-hidden">
             <GradientBackground variant="login" />
             <div className="flex flex-1 items-center justify-center px-4 py-16">
-                <Card title="Log in">
+                <Card title="Log in" variant="login">
                     <LoginForm />
                 </Card>
             </div>

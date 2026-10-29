@@ -13,7 +13,7 @@ export default function ProfilePage() {
         <main className="relative isolate flex flex-1 overflow-hidden">
             <GradientBackground variant="profile" />
             <div className="flex flex-1 items-center justify-center px-4 py-16">
-                <Card title="Profile">
+                <Card title="Profile" variant="profile">
                     <ProfileView />
                 </Card>
             </div>

@@ -61,6 +61,7 @@ export default function HomeHero() {
                 A minimal example of JWT authentication with Next.js 16 and
                 Express 5.
             </p>
+            {/*<p className="text-lg text-neutral-600 dark:text-neutral-400"></p>*/}
             <div className="flex gap-3">
                 <ButtonLink href="/register" className="px-4">
                     Create account
