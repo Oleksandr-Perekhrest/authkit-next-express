@@ -21,9 +21,6 @@ export default function config(phase: string): NextConfig {
 
     return {
         transpilePackages: ["@authkit/shared"],
-        experimental: {
-            agentFeedback: true,
-        },
         turbopack: {
             rules: {
                 "*.css": {

@@ -14,6 +14,7 @@ enum AuthProvider {
 model User {
   id            String         @id @default(uuid(7)) @db.Uuid
   email         String         @unique
+  // Set on Google sign-in; reserved for future email verification of password accounts.
   emailVerified DateTime?
   name          String?
   passwordHash  String?

@@ -22,5 +22,6 @@ pre-push:
       run: pnpm test
     - name: test:integration
       run: pnpm test:integration
+      fail_text: "Integration tests require Docker with Postgres running: docker compose up -d"
     - name: build
       run: pnpm build
