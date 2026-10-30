@@ -17,7 +17,8 @@ import {
     REFRESH_REUSE_LEEWAY_SECONDS,
 } from "../../lib/tokens";
 
-// Checked when the user is missing, so every failed login takes the same time
+// Precomputed once so a login attempt for an unknown email still awaits argon2.verify,
+// keeping the response time indistinguishable from a wrong-password attempt on a known account.
 const dummyHash = hashPassword("dummy-password-for-timing");
 
 export type Session = { accessToken: string; refreshToken: string };
@@ -147,6 +148,7 @@ export const findOrCreateGoogleUser = async ({
     name,
 }: GoogleClaims) => {
     const normalizedEmail = email.trim().toLowerCase();
+    const now = new Date();
 
     const account = await prisma.account.findUnique({
         where: {
@@ -155,11 +157,20 @@ export const findOrCreateGoogleUser = async ({
                 providerAccountId: sub,
             },
         },
-        select: { user: { select: publicUserSelect } },
+        select: {
+            user: { select: { ...publicUserSelect, emailVerified: true } },
+        },
     });
 
     if (account) {
-        return { user: account.user, created: false };
+        const { emailVerified, ...user } = account.user;
+        if (emailVerified === null) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: now },
+            });
+        }
+        return { user, created: false };
     }
 
     const existing = await prisma.user.findUnique({
@@ -181,6 +192,7 @@ export const findOrCreateGoogleUser = async ({
         data: {
             email: normalizedEmail,
             name: trimmedName || null,
+            emailVerified: now,
             accounts: {
                 create: { provider: "google", providerAccountId: sub },
             },
@@ -227,7 +239,8 @@ export const rotateSession = async (refreshToken: string): Promise<Session> => {
             );
         }
 
-        // Revoke the entire family outside a transaction so the write always commits.
+        // Family revocation runs outside a transaction intentionally: the request will throw 401
+        // below, and any write inside that transaction would be rolled back, leaving the family active.
         await prisma.refreshToken.updateMany({
             where: { familyId: row.familyId, revokedAt: null },
             data: { revokedAt: now },

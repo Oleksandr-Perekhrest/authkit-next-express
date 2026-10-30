@@ -174,7 +174,9 @@ export const googleCallback: RequestHandler = async (req, res) => {
                 withToast("/login", GOOGLE_AUTH_ERRORS.account_exists),
             );
         }
-        console.error("Google OAuth callback error", err);
+        const errName = err instanceof Error ? err.name : "UnknownError";
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error("Google OAuth callback error", errName, errMsg);
         return res.redirect(
             302,
             withToast("/login", GOOGLE_AUTH_ERRORS.failed),
