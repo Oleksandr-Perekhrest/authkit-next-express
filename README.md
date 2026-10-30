@@ -1,16 +1,21 @@
 # authkit-next-express
 
-A learning pet project implementing a full authentication cycle: email/password
-sign-up and login, Google OAuth, and JWT access tokens paired with rotating
-refresh tokens stored in httpOnly cookies. The frontend is Next.js 16 (App
-Router) and the backend is Express 5, wired together in a pnpm monorepo.
+[![CI](https://github.com/Oleksandr-Perekhrest/authkit-next-express/actions/workflows/ci.yml/badge.svg)](https://github.com/Oleksandr-Perekhrest/authkit-next-express/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A full-stack authentication system demonstrating email/password and Google OAuth flows with JWT access tokens and rotating refresh tokens in httpOnly cookies — built as a pnpm monorepo with Next.js 16 on Vercel and Express 5 on Render.
 
 ## Live demo
 
 <https://authkit-web.vercel.app>
 
-The API runs on Render's free plan and sleeps after 15 minutes of inactivity.
-The first request after a cold start can take up to a minute.
+The API runs on Render's free plan and sleeps after 15 minutes of inactivity. The first request after a cold start can take up to a minute — the UI shows a notice while the API wakes up.
+
+## Screenshots
+
+| Home                                    | Sign in                                     | Profile                                       |
+| --------------------------------------- | ------------------------------------------- | --------------------------------------------- |
+| ![Home page](docs/screenshots/home.png) | ![Sign-in page](docs/screenshots/login.png) | ![Profile page](docs/screenshots/profile.png) |
 
 ## Architecture
 
@@ -29,97 +34,141 @@ flowchart LR
     G -. "callback → Vercel domain" .-> B
 ```
 
-All API calls from the browser target the Vercel domain under `/api/*`. Next.js
-rewrites those requests to the Render service so cookies are set on the Vercel
-origin and remain first-party — no cross-site restrictions apply. Google OAuth
-redirects also land on the Vercel domain, which keeps the callback in the same
-origin as the rest of the app.
+Every API call from the browser targets the Vercel domain under `/api/*`. Next.js rewrites those requests to the Render service so cookies are set on the Vercel origin and remain first-party — `SameSite=Lax` does not block them and no CORS configuration is needed. The Google OAuth redirect URI also lands on the Vercel domain, keeping the callback in the same origin as the rest of the app.
 
 ## Tech stack
 
-- **Next.js 16** (App Router, React 19, Tailwind CSS v4) — frontend
-- **Express 5** (bundled to ESM with tsdown) — API
-- **Prisma** — ORM, migrations, Postgres driver
-- **jose** — JWT signing and verification
-- **argon2** — password hashing (argon2id)
-- **Zod** — schema validation, shared between apps via `@authkit/shared`
+| Technology                            | Role              | Why                                                                                |
+| ------------------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| **Next.js 16** (App Router, React 19) | Frontend          | Server components by default; rewrite-based API proxy keeps cookies first-party    |
+| **Tailwind CSS v4**                   | Styles            | Utility-first, zero runtime, co-located with components                            |
+| **Express 5**                         | API               | Minimal and well-understood; async errors propagate to middleware by default       |
+| **tsdown**                            | API bundler       | Bundles to a single ESM file with `@authkit/shared` inlined; no extra install step |
+| **Prisma**                            | ORM + migrations  | Type-safe queries, schema-driven migrations, first-class Postgres support          |
+| **jose**                              | JWT               | Web-standard crypto API, no native bindings; HS256 sign and verify                 |
+| **argon2**                            | Password hashing  | argon2id is memory-hard and has no 72-byte input limit like bcrypt                 |
+| **Zod + `@authkit/shared`**           | Schema validation | Single source of truth for request shapes and inferred types shared across apps    |
+| **arctic**                            | OAuth 2.0 client  | Handles PKCE, token exchange, and ID token decoding for Google                     |
+| **express-rate-limit**                | Rate limiting     | Simple per-IP limits without an external store                                     |
 
-## Security decisions
-
-Deliberate choices, with the reasoning behind them.
+## Security design
 
 ### Password policy
 
-- Minimum length is **8 characters** (OWASP). NIST SP 800-63B-4 asks for 15
-  when a password is the only factor; 8 was chosen on purpose to keep sign-up
-  friction low in a demo project.
-- Maximum length is 128, so passphrases and password-manager output fit, but
-  the server is never asked to hash arbitrarily long input.
-- No composition rules (uppercase, digits, symbols): they push users toward
-  predictable patterns like `Password1!` without adding real strength.
-- Login only checks that the password is non-empty, so a future policy change
-  never locks out existing users.
+- Minimum length is **8 characters** (OWASP). NIST SP 800-63B-4 recommends 15 when a password is the only factor; 8 was chosen to keep sign-up friction low in a demo.
+- Maximum length is **128 characters**, so passphrases and password-manager output fit without asking the server to hash arbitrarily long input.
+- No composition rules (uppercase, digits, symbols): they push users toward predictable patterns like `Password1!` without adding real strength.
+- Login only checks that the password is non-empty, so a future policy change never locks out existing users.
 
 ### Password hashing
 
-- Passwords are hashed with **argon2id** (`argon2` package, default
-  parameters). It is memory-hard, which makes GPU brute force expensive, and
-  has no 72-byte input limit like bcrypt.
-- Salt and parameters are stored inside the hash string itself.
+Passwords are hashed with **argon2id** (`argon2` package). A dummy hash is computed once at module load. When the email is not found, the password is still checked with `argon2.verify` against that dummy hash, so an unknown email takes the same time as a wrong password for an existing account. Both cases return `401 INVALID_CREDENTIALS`.
 
-### Tokens and sessions
+### Tokens
 
-- **Access token**: JWT (HS256, `jose`), lives **15 minutes**. Payload holds
-  only `sub` (user id), `iat` and `exp`: a JWT is signed, not encrypted, so no
-  personal data goes in it.
-- **Refresh token**: an opaque random string (32 bytes), lives **30 days**.
-  It is looked up in the database on every refresh anyway, so a JWT would add
-  nothing but a second secret. Only its SHA-256 hash is stored: a leaked
-  table cannot be used to sign in. A fast hash is safe here because the token
-  is random, unlike a password.
-- Registration signs the user in right away; register, login and Google sign-in
-  all end in the same `createSession`.
+- **Access token**: JWT (HS256, `jose`), expires in **15 minutes**. The payload contains only `sub` (user id), `iat`, and `exp` — no personal data, since JWTs are signed but not encrypted.
+- **Refresh token**: `randomBytes(32).toString("base64url")` — 32 bytes of entropy as a base64url string, valid for **30 days**. Only its SHA-256 hex digest is stored in the database, so a leaked table cannot be replayed to create sessions. A fast hash is appropriate here because the token is cryptographically random, unlike a password.
 
-### Cookies
+### Refresh rotation and reuse detection
 
-- Both tokens travel in cookies with `HttpOnly`, `SameSite=Lax`, `Path=/`
-  and `Secure` in production. Scripts on the page cannot read them.
-- `Path=/` on purpose: behind the Next.js rewrite the browser sees
-  `/api/auth/...` while the API sees `/auth/...`, so a narrower path would
-  not match on one side.
+Every successful `/auth/refresh` call atomically revokes the presented token and issues a fresh one under the same `familyId` (a UUID assigned at login). This is the most nuanced part of the security model:
 
-### Login responses
+- **Concurrent tabs**: two tabs may race to refresh the same token before either has received its replacement. A 10-second grace window handles this: if a just-rotated token is presented again within 10 seconds while the family still has an active token, the server returns **409 REFRESH_CONFLICT** and the client retries with whichever token it holds. The race inside the rotation transaction is resolved with an optimistic lock (`updateMany` count check), which also returns 409 on collision.
+- **Token theft**: if a revoked token is presented after the grace window while the family still has active tokens, the server revokes the entire family and returns 401. Both the legitimate user and a potential attacker are forced to log in again.
+- **Logout** deletes every token in the presenting token's family (current device only). **Logout-all** deletes every token across all families for the user (all devices).
 
-- Unknown email, wrong password and a Google-only account all return the same
-  `401 INVALID_CREDENTIALS`.
-- When the user does not exist, the password is still checked against a dummy
-  hash, so response time does not reveal which emails are registered.
+### Google OAuth
+
+Authorization Code + PKCE via `arctic`. The `state` and `code_verifier` values are stored in short-lived HttpOnly cookies and validated before the token exchange. After the exchange:
+
+- `email_verified` must be `true` — unverified Google accounts are rejected.
+- `aud` is checked against `GOOGLE_CLIENT_ID` and `iss` against `accounts.google.com` / `https://accounts.google.com`.
+- Lookup is by Google `sub` (stable account ID), not by email. If a `sub` match is found, the user signs in. If only an email match exists (an account registered with a password), the callback redirects to `/login?toast=account_exists` — no automatic account linking, which prevents account pre-hijacking.
+- `emailVerified` is set to the current time on every Google sign-in for accounts where it was previously `null`.
+
+### Cookie flags
+
+Both auth cookies carry `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure` in production (`NODE_ENV === "production"`). `Secure` is omitted in development so `http://localhost` works without HTTPS. `Path=/` serves two purposes: the API operates at `/auth/*` but the browser accesses those routes at `/api/auth/*`, so a narrower path would not match from the browser's perspective; and the Next.js middleware in `apps/web/src/proxy.ts` reads `refresh_token` on the `/profile` route, which is outside `/api`.
 
 ### Rate limiting
 
-- `express-rate-limit`, per IP: login allows **10 failed attempts per 15
-  minutes** (successful logins are not counted), registration **5 per hour**.
-- Limits run before validation, so malformed requests count too.
-- Counters live in process memory, which is enough for a single instance.
+`express-rate-limit`, per IP, in-memory — counters reset on process restart, which is fine for a single instance.
+
+| Endpoint              | Limit | Window     | Notes                           |
+| --------------------- | ----- | ---------- | ------------------------------- |
+| `POST /auth/login`    | 10    | 15 minutes | Successful requests not counted |
+| `POST /auth/register` | 5     | 1 hour     | All requests counted            |
+
+Limiters run before request validation, so malformed requests count toward the limit.
+
+## Tests
+
+### Unit tests
+
+| Package           | Tests |
+| ----------------- | ----- |
+| `apps/api`        | 14    |
+| `apps/web`        | 38    |
+| `packages/shared` | 22    |
+
+Run with `pnpm test`.
+
+### Integration tests
+
+24 tests across 9 files in `apps/api/test/integration/`, run with `pnpm test:integration`.
+
+- **Real stack**: each test file calls `createApp()` and passes the Express instance to Supertest, which binds it in-process — no network port is opened. Requests reach a real Postgres instance.
+- **Isolated database**: a safety guard in both `globalSetup` and the DB helper rejects any `DATABASE_URL` that does not target the `authkit_test` database, preventing accidental writes to dev or prod data.
+- **Sequential files**: `fileParallelism: false` — no inter-file interference.
+- **Clean state**: each test file calls `truncateAll()` in `beforeEach` to reset all tables before every test.
+- The `authkit_test` database is created and migrated automatically on first run and kept between runs.
+
+### CI
+
+The `checks` job runs format, lint, typecheck, unit tests, integration tests, and build on every PR and push to `main`. The `docker` job builds the production image and runs a smoke test against an empty database — migrations are applied from scratch inside the container, and the job polls `GET /health` for up to 60 seconds.
+
+## Engineering workflow
+
+- **GitHub Flow**: every change goes through a PR; three required checks must pass — `checks` (format, lint, typecheck, tests, build), `docker` (image build + smoke test), and `PR title` (Conventional Commits format).
+- **Conventional Commits**: PR titles follow the spec and become the squash-merge commit message.
+- **Lefthook hooks**: pre-commit runs `eslint --fix` and `prettier --write` on staged files and re-stages the fixed files; pre-push mirrors the full CI suite locally before the push lands.
+- **Squash merges**: one clean commit per PR on `main`.
+- **Tagged releases**: `v0.1.0` – `v0.9.0`, one per development stage.
+
+## How it was built
+
+The system was developed in nine stages from a working roadmap, each closed as a tagged release (`v0.1.0`–`v0.9.0`) with a written decision record: monorepo setup → database and API structure → registration and login → refresh rotation and logout → web frontend → Google OAuth → deployment → post-deploy hardening → tests. Implementation was done with Claude Code, with every change reviewed before merging.
+
+## Known limitations
+
+- **In-memory rate limiting**: counters live in process memory and reset on restart; adequate for a single instance but not horizontally scalable.
+- **No email verification for password accounts**: `emailVerified` is set only on Google sign-in; accounts registered with email/password have it `null`.
+- **Render free-plan cold starts**: the API sleeps after 15 minutes of inactivity; the first request can take up to a minute.
+- **No session management UI**: sessions are not listed or labelled by device, so a user cannot revoke a single other device. Logout-all signs out everywhere, including the current session.
+-
 
 ## Local development
 
-**Prerequisites:** Node.js 24 (see `.nvmrc`), pnpm via corepack, Docker.
+**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm via corepack, Docker.
+
+<details>
+<summary>Full setup steps</summary>
 
 ```bash
 nvm use
 corepack enable pnpm
-pnpm install
+pnpm install          # installs deps and git hooks (lefthook)
 
-# start the database
-docker compose up -d db
+# start the local database
+pnpm db:up
 
-# copy env files
+# copy and fill env files
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
+# fill in JWT_ACCESS_SECRET and Google credentials in apps/api/.env
 
-# fill in JWT_ACCESS_SECRET and Google credentials in apps/api/.env, then run migrations
-pnpm --filter @authkit/api exec prisma migrate dev
+# run migrations
+pnpm --filter @authkit/api db:migrate
 
 # start both apps
 pnpm dev
@@ -128,57 +177,21 @@ pnpm dev
 - Web: <http://localhost:3000>
 - API: <http://localhost:4000/health>
 
-| Script                  | Description                                    |
-| ----------------------- | ---------------------------------------------- |
-| `pnpm dev`              | Run web and api in watch mode                  |
-| `pnpm test`             | Run Vitest unit tests                          |
-| `pnpm test:integration` | Run API integration tests (requires Docker DB) |
-| `pnpm build`            | Build all packages                             |
-| `pnpm lint`             | Lint the whole repo                            |
-| `pnpm typecheck`        | Type-check all packages                        |
-| `pnpm format`           | Format with Prettier                           |
-| `pnpm format:check`     | Check formatting without writing               |
+</details>
 
-## Integration tests
+| Script                  | Description                            |
+| ----------------------- | -------------------------------------- |
+| `pnpm dev`              | Run web and API in watch mode          |
+| `pnpm test`             | Vitest unit tests                      |
+| `pnpm test:integration` | Integration tests (requires Docker DB) |
+| `pnpm build`            | Build all packages                     |
+| `pnpm lint`             | ESLint across the repo                 |
+| `pnpm typecheck`        | `tsc` across all packages              |
+| `pnpm format`           | Prettier write                         |
+| `pnpm format:check`     | Prettier check without writing         |
+| `pnpm db:up / db:down`  | Start / stop local Postgres via Docker |
 
-Integration tests run against a real Postgres database named `authkit_test`. Docker must be running.
-
-```bash
-# start the database (if not already running)
-docker compose up -d db
-
-pnpm test:integration
-```
-
-The test suite creates the `authkit_test` database and runs all Prisma migrations automatically on
-first run. Each test file truncates all tables in `beforeEach` so tests are isolated. The database
-is kept between runs to avoid recreating it on every invocation.
-
-## Git hooks
-
-[Lefthook](https://github.com/evilmartians/lefthook) installs hooks automatically when you run `pnpm install` (via the `prepare` script).
-
-**pre-commit** — runs sequentially on staged files:
-
-1. `eslint --fix` on staged JS/TS files, using the root config (which applies Next.js rules to `apps/web` and Node/TS rules to `apps/api` and `packages/shared`).
-2. `prettier --write` on all staged files.
-
-Fixed files are re-staged automatically before the commit lands.
-
-**pre-push** — mirrors the CI workflow:
-
-1. `pnpm format:check`
-2. `pnpm lint`
-3. `pnpm typecheck`
-4. `pnpm test`
-5. `pnpm test:integration`
-6. `pnpm build`
-
-To skip the pre-push hook in exceptional cases: `git push --no-verify`.
-
-## Contributing
-
-PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/) because the title becomes the squash-merge commit message.
+`apps/api/http/auth.http` and `apps/api/http/users.http` are request scripts for the [JetBrains HTTP Client](https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html) and VS Code REST Client. They cover every API endpoint and are updated alongside route changes.
 
 ## Deployment
 
@@ -189,16 +202,11 @@ Deploy the API as a **Docker** service with these settings:
 - **Dockerfile path:** `apps/api/Dockerfile`
 - **Build context:** repo root (the Dockerfile copies workspace manifests from there)
 - **Health check path:** `/health`
-- **Build filters:** `apps/api/**`, `packages/shared/**`, `pnpm-lock.yaml`,
-  `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.dockerignore`
-  — changes outside these paths (e.g. only `apps/web`) do not redeploy the API.
+- **Build filters:** `apps/api/**`, `packages/shared/**`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.dockerignore` — changes outside these paths do not redeploy the API.
 
-Migrations run automatically on container start before the server process. A
-failed migration exits the container; if the new container fails to start or
-does not pass the `/health` check, Render keeps the previous deploy running.
+Migrations run automatically on container start. A failed migration exits the container; Render keeps the previous deploy running until the new one passes the health check.
 
-`NODE_ENV=production` is set in the Dockerfile; `PORT` is provided by Render
-automatically.
+`NODE_ENV=production` is set in the Dockerfile; `PORT` is provided by Render automatically.
 
 | Variable               | Description                                                                             |
 | ---------------------- | --------------------------------------------------------------------------------------- |
@@ -217,17 +225,14 @@ Set the **root directory** to `apps/web`. No build command override is needed.
 | --------- | ----------------------------------------------------------- |
 | `API_URL` | Render service URL, e.g. `https://authkit-api.onrender.com` |
 
-## Run the production image locally
+### Run the production image locally
 
-Use this to verify the image before merging PRs that touch the Dockerfile, dependencies, or
-install scripts.
+Use this to verify the image before merging changes to the Dockerfile or dependencies.
 
 ```bash
 cp apps/api/.env.docker.example apps/api/.env.docker
+# fill in JWT_ACCESS_SECRET and copy Google credentials from apps/api/.env
 ```
-
-Edit `apps/api/.env.docker`: fill in `JWT_ACCESS_SECRET` (generate with
-`openssl rand -base64 48`) and copy your Google credentials from `apps/api/.env`.
 
 Build the image with the same Dockerfile and context used by CI and Render:
 
@@ -245,26 +250,37 @@ docker run --rm \
   authkit-api:local
 ```
 
-`--add-host` maps `host.docker.internal` to the host on Linux; Docker Desktop resolves it
-automatically on macOS and Windows.
+`--add-host` maps `host.docker.internal` to the host on Linux; Docker Desktop resolves it automatically on macOS and Windows.
 
-**Expected output:** Prisma migrations run on start, followed by `api listening on port 4000`.
-Verify with:
-
-```bash
-curl localhost:4000/health
-```
-
-→ HTTP 200.
+Verify with `curl localhost:4000/health` → HTTP 200.
 
 ## Project structure
 
 ```
 apps/
-  web/        Next.js 16 frontend
-  api/        Express 5 API
-    Dockerfile        production image (build context: repo root)
-    http/             .http request files for manual testing
+  api/
+    Dockerfile               production image (build context: repo root)
+    http/                    JetBrains / VS Code HTTP request scripts
+      auth.http
+      users.http
+    src/
+      config/env.ts          Zod-validated environment
+      db/                    Prisma client singleton
+      jobs/                  background cleanup (expired refresh tokens)
+      lib/                   tokens, password hashing, Google OAuth client
+      middleware/            error handler, rate limiter, requireAuth, validate
+      modules/
+        auth/                routes → controller → service (all auth flows)
+        health/              GET /health
+        users/               GET /users/me, PATCH /users/me
+    test/
+      helpers/               Supertest agent helpers, DB truncation, global setup
+      integration/           per-endpoint integration test files
+  web/                       Next.js 16 App Router frontend
 packages/
-  shared/     Zod schemas and types consumed by both apps
+  shared/                    Zod schemas and inferred types consumed by both apps
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
